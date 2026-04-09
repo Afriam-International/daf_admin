@@ -1,39 +1,69 @@
-import { BrowserRouter as Router, Route, Routes  } from 'react-router-dom';
-import Home from './Home';
-import Test from './Test';
-import LyricsViewer from './LyricsViewer';
-import SpotifyPlayer from './SpotifyPlayer';
-import BusinessSearch from './BusinessSearch';
-import SocialAuth from './Auth/SocialAuth';
-import AuthSuccess from './Auth/AuthSuccess';
-import Editor from './pixora/pages/Editor';
-import Download from './Download';
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import AuthLayout from "./layouts/AuthLayout";
+import AdminLayout from "./layouts/AdminLayout";
+import GuestRoute from "./routes/GuestRoute";
+import ProtectedRoute from "./routes/ProtectedRoute";
+import LoginPage from "./pages/LoginPage";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
+import AdminOverviewPage from "./pages/AdminOverviewPage";
+import UsersPage from "./pages/UsersPage";
+import AdminsPage from "./pages/AdminsPage";
+import BlogPage from "./pages/BlogPage";
+import DeletionRequestsPage from "./pages/DeletionRequestsPage";
+import DonationsPage from "./pages/DonationsPage";
+import GalleryPage from "./pages/GalleryPage";
+import SocialFeedPage from "./pages/SocialFeedPage";
+import AnalyticsPage from "./pages/AnalyticsPage";
+import PermissionsPage from "./pages/PermissionsPage";
+import ActivityLogsPage from "./pages/ActivityLogsPage";
+import SettingsPage from "./pages/SettingsPage";
+import NotFoundPage from "./pages/NotFoundPage";
+import { useAuth } from "./hooks/useAuth";
 
+function AccessRoute({ roles, children }) {
+  const { user } = useAuth();
+  const allowedRoles = Array.isArray(roles) ? roles : [roles];
 
-const App = () => {
+  if (!allowedRoles.includes(user?.role)) {
+    return <Navigate to="/admin" replace />;
+  }
 
+  return children;
+}
+
+export default function App() {
   return (
-  
-    <Router>
+    <BrowserRouter>
       <Routes>
-      {/* Auth urls */}
-     <Route path={`/avatar`} element={<Home />} />
-     <Route path={`/test`} element={<Test />} />
-     <Route path={`/lyrics-viewer`} element={<LyricsViewer />} />
-     <Route path={`/spotify-player`} element={<SpotifyPlayer />} />
-     <Route path={`/business`} element={<BusinessSearch />} />
-     <Route path={'/social-auth'} element={<SocialAuth />} />
-     <Route path={'/auth-success'} element={<AuthSuccess />} />
-     <Route path={'/editor'} element={<Editor />} />
-     <Route path={'/'} element={<Download />} />
+        <Route element={<GuestRoute />}>
+          <Route element={<AuthLayout />}>
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
+          </Route>
+        </Route>
 
-      {/* Add other routes as needed */}
+        <Route element={<ProtectedRoute role={["admin", "superadmin"]} />}>
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route index element={<AdminOverviewPage />} />
+            <Route path="analytics" element={<AccessRoute roles="superadmin"><AnalyticsPage /></AccessRoute>} />
+            <Route path="users" element={<UsersPage />} />
+            <Route path="admins" element={<AccessRoute roles="superadmin"><AdminsPage /></AccessRoute>} />
+            <Route path="deletion-requests" element={<DeletionRequestsPage />} />
+            <Route path="donations" element={<AccessRoute roles="superadmin"><DonationsPage /></AccessRoute>} />
+            <Route path="gallery" element={<GalleryPage />} />
+            <Route path="social-feed" element={<SocialFeedPage />} />
+            <Route path="blog" element={<BlogPage />} />
+            <Route path="permissions" element={<AccessRoute roles="superadmin"><PermissionsPage /></AccessRoute>} />
+            <Route path="activity-logs" element={<AccessRoute roles="superadmin"><ActivityLogsPage /></AccessRoute>} />
+            <Route path="settings" element={<SettingsPage />} />
+          </Route>
+        </Route>
 
-
+        <Route path="/" element={<Navigate to="/admin" replace />} />
+        <Route path="*" element={<NotFoundPage />} />
       </Routes>
-    </Router>
-
+    </BrowserRouter>
   );
-};
-
-export default App;
+}
