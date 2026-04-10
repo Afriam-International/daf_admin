@@ -8,7 +8,7 @@ export default function ProtectedRoute({ role = null }) {
     return (
       <div className="grid min-h-screen place-items-center bg-[var(--color-bg)]">
         <div className="flex items-center gap-3 rounded-full border border-slate-200 bg-white px-5 py-3 text-sm text-slate-600 shadow-sm">
-          <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-[var(--color-teal)]" />
+          <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-[var(--color-accent)]" />
           Loading your workspace
         </div>
       </div>

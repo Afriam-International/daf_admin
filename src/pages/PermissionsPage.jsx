@@ -12,6 +12,7 @@ const permissionFields = [
   { key: "canViewAnalytics", label: "View Analytics" },
   { key: "canManageBlog", label: "Manage Blog" },
   { key: "canManageFeed", label: "Manage Social Feed" },
+  { key: "canManageFaqs", label: "Manage FAQs" },
   { key: "canManageDeletionRequests", label: "Manage Deletion Requests" },
   { key: "canViewActivityLog", label: "View Activity Log" },
 ];
@@ -111,7 +112,7 @@ export default function PermissionsPage() {
                           checked={Boolean(item.permissions[field.key])}
                           disabled={user?.role !== "superadmin"}
                           onChange={(event) => handleToggle(item.admin.id, field.key, event.target.checked)}
-                          className="h-5 w-5 rounded border-slate-300 text-[var(--color-teal)] focus:ring-[var(--color-teal)]"
+                          className="h-5 w-5 rounded border-slate-300 text-[var(--color-accent)] focus:ring-[var(--color-accent)]"
                         />
                       )}
                     </label>

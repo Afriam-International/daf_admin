@@ -40,7 +40,7 @@ export default function ResetPasswordPage() {
   if (success) {
     return (
       <div>
-        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--color-teal)]">
+        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--color-accent)]">
           Password updated
         </p>
         <h2 className="mt-2 text-3xl font-semibold text-[var(--color-brown)]">
@@ -51,7 +51,7 @@ export default function ResetPasswordPage() {
         </p>
         <Link
           to="/login"
-          className="mt-8 inline-flex rounded-2xl bg-[var(--color-teal)] px-5 py-3 text-sm font-semibold text-white"
+          className="mt-8 inline-flex rounded-2xl bg-[var(--color-accent)] px-5 py-3 text-sm font-semibold text-white"
         >
           Back to login
         </Link>
@@ -61,11 +61,11 @@ export default function ResetPasswordPage() {
 
   return (
     <div>
-      <Link to="/login" className="mb-6 inline-flex items-center gap-2 text-sm font-medium text-[var(--color-teal)]">
+      <Link to="/login" className="mb-6 inline-flex items-center gap-2 text-sm font-medium text-[var(--color-accent)]">
         <ArrowLeft className="h-4 w-4" />
         Back to login
       </Link>
-      <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--color-teal)]">
+      <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--color-accent)]">
         New password
       </p>
       <h2 className="mt-2 text-3xl font-semibold text-[var(--color-brown)]">

@@ -9,12 +9,14 @@ import { blogService } from "../services/blogService";
 import { userService } from "../services/userService";
 import { galleryService } from "../services/galleryService";
 import { feedService } from "../services/feedService";
+import { faqService } from "../services/faqService";
 import { useAuth } from "../hooks/useAuth";
 import {
   formatCompactNumber,
   formatCurrency,
   formatDateTime,
 } from "../services/formatters";
+import { BsQuestion } from "react-icons/bs";
 
 const superadminStats = {
   totalUsers: 0,
@@ -39,6 +41,7 @@ export default function AdminOverviewPage() {
     deletionCount: 0,
     galleryCount: 0,
     feedCount: 0,
+    faqCount: 0,
   });
 
   useEffect(() => {
@@ -56,13 +59,14 @@ export default function AdminOverviewPage() {
           setSuperStats({ ...superadminStats, ...statsResponse.data.data });
           setNews(newsResponse.data || []);
         } else {
-          const [usersResponse, deletionsResponse, galleryResponse, feedResponse, newsResponse] =
+          const [usersResponse, deletionsResponse, galleryResponse, feedResponse, newsResponse, faqResponse] =
             await Promise.all([
               userService.getAllUsers({ page: 1, limit: 1, role: "user" }),
               userService.getDeletionRequests({ page: 1, limit: 1 }),
               galleryService.getImages(),
               feedService.getFeeds(),
               blogService.getPosts({ page: 1, perPage: 4 }),
+              faqService.getFaqs(),
             ]);
 
           setAdminStats({
@@ -70,6 +74,7 @@ export default function AdminOverviewPage() {
             deletionCount: deletionsResponse.data.pagination?.total || 0,
             galleryCount: (galleryResponse.data.data || []).length,
             feedCount: (feedResponse.data.data || []).length,
+            faqCount: (faqResponse.data.data || []).length,
           });
           setNews(newsResponse.data || []);
         }
@@ -108,7 +113,7 @@ export default function AdminOverviewPage() {
       ) : isSuperadmin ? (
         <>
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <StatCard title="Total users" value={formatCompactNumber(superStats.totalUsers)} icon={Users} trend={superStats.userTrend} helper="All registered accounts" accent="teal" />
+            <StatCard title="Total users" value={formatCompactNumber(superStats.totalUsers)} icon={Users} trend={superStats.userTrend} helper="All registered accounts" accent="accent" />
             <StatCard title="Active users" value={formatCompactNumber(superStats.activeUsers)} icon={Users} trend={superStats.userTrend} helper="Users with active status" accent="accent" />
             <StatCard title="Admin team" value={formatCompactNumber(superStats.adminUsers)} icon={ShieldCheck} helper="Admins and superadmins" accent="brown" />
             <StatCard title="Total raised" value={formatCurrency(superStats.totalRaised)} icon={Wallet} trend={superStats.revenueTrend} helper={`${superStats.activeCampaigns || 0} active campaigns`} accent="sand" />
@@ -159,8 +164,8 @@ export default function AdminOverviewPage() {
       ) : (
         <>
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <StatCard title="Users" value={formatCompactNumber(adminStats.userCount)} icon={Users} helper="Accounts you can manage" accent="teal" />
-            <StatCard title="Deletion requests" value={formatCompactNumber(adminStats.deletionCount)} icon={Trash2} helper="Accounts awaiting review" accent="accent" />
+            <StatCard title="Users" value={formatCompactNumber(adminStats.userCount)} icon={Users} helper="Accounts you can manage" accent="accent" />
+            <StatCard title="FAQs" value={formatCompactNumber(adminStats.faqCount)} icon={BsQuestion} helper="Accounts awaiting review" accent="accent" />
             <StatCard title="Gallery images" value={formatCompactNumber(adminStats.galleryCount)} icon={Images} helper="Images available" accent="brown" />
             <StatCard title="Social feed posts" value={formatCompactNumber(adminStats.feedCount)} icon={BookOpenText} helper="Posts ready for the mobile app" accent="sand" />
           </div>
@@ -181,8 +186,9 @@ export default function AdminOverviewPage() {
                   { label: "Update Gallery", to: "/admin/gallery", helper: "Add or remove mobile app gallery images." },
                   { label: "Manage Social Feed", to: "/admin/social-feed", helper: "Create and update curated social posts." },
                   { label: "Browse DAF News", to: "/admin/blog", helper: "Review news content shown in the admin dashboard." },
+                  { label: "Edit FAQs", to: "/admin/faqs", helper: "Update the FAQs shown to users in the app and website." },
                 ].map((item) => (
-                  <Link key={item.to} to={item.to} className="rounded-[24px] border border-slate-100 bg-slate-50 px-4 py-4 transition hover:border-[var(--color-teal)]/30 hover:bg-white">
+                  <Link key={item.to} to={item.to} className="rounded-[24px] border border-slate-100 bg-slate-50 px-4 py-4 transition hover:border-[var(--color-accent)]/30 hover:bg-white">
                     <p className="font-semibold text-slate-900">{item.label}</p>
                     <p className="mt-1 text-sm text-slate-500">{item.helper}</p>
                   </Link>
@@ -209,7 +215,7 @@ export default function AdminOverviewPage() {
                     ) : null}
                     <div className="space-y-3 p-4">
                       <h3 className="line-clamp-3 text-sm font-semibold text-slate-900" dangerouslySetInnerHTML={{ __html: post.title?.rendered || "" }} />
-                      <a href={post.link} target="_blank" rel="noreferrer" className="inline-flex rounded-2xl bg-[var(--color-teal)] px-4 py-2 text-sm font-semibold text-white">
+                      <a href={post.link} target="_blank" rel="noreferrer" className="inline-flex rounded-2xl bg-[var(--color-accent)] px-4 py-2 text-sm font-semImagesibold text-white">
                         Read post
                       </a>
                     </div>

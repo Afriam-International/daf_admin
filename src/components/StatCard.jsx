@@ -1,17 +1,17 @@
 import { TrendingDown, TrendingUp } from "lucide-react";
 
 const accents = {
-  teal: {
+  accent: {
     shell: "from-[#e5f7fa] via-white to-[#f3fbfd]",
-    icon: "bg-[var(--color-teal)] text-white",
+    icon: "bg-[var(--color-accent)] text-white",
   },
   brown: {
     shell: "from-[#f7efe9] via-white to-[#fffaf7]",
     icon: "bg-[var(--color-brown)] text-white",
   },
-  accent: {
+  teal: {
     shell: "from-[#f5ebff] via-white to-[#fcf8ff]",
-    icon: "bg-[var(--color-accent)] text-white",
+    icon: "bg-[var(--color-teal)] text-white",
   },
   sand: {
     shell: "from-[#f8f4ef] via-white to-[#f9f7f3]",
@@ -25,9 +25,9 @@ export default function StatCard({
   icon: Icon,
   trend,
   helper,
-  accent = "teal",
+  accent = "accent"
 }) {
-  const palette = accents[accent] || accents.teal;
+  const palette = accents[accent] || accents.accent;
 
   return (
     <div

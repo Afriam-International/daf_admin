@@ -3,7 +3,7 @@ export default function PageHeader({ eyebrow, title, description, actions }) {
     <div className="flex flex-col gap-4 rounded-[28px] border border-white/70 bg-white/80 p-6 shadow-[0_24px_60px_rgba(74,44,31,0.08)] backdrop-blur sm:flex-row sm:items-end sm:justify-between">
       <div className="space-y-2">
         {eyebrow ? (
-          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--color-teal)]">
+          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--color-accent)]">
             {eyebrow}
           </p>
         ) : null}

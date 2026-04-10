@@ -14,7 +14,7 @@ export default function ConfirmModal({
   const confirmClasses =
     tone === "danger"
       ? "bg-rose-600 text-white"
-      : "bg-[var(--color-teal)] text-white";
+      : "bg-[var(--color-accent)] text-white";
 
   return (
     <div

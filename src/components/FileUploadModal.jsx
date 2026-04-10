@@ -59,15 +59,15 @@ export default function FileUploadModal({
                 <p className="mt-1 text-xs text-slate-500">Remove it if you want to choose a different image.</p>
               </div>
               <label className="inline-flex cursor-pointer items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700">
-                <ImagePlus className="h-4 w-4 text-[var(--color-teal)]" />
+                <ImagePlus className="h-4 w-4 text-[var(--color-accent)]" />
                 Change
                 <input type="file" accept={accept} onChange={onFileChange} className="hidden" />
               </label>
             </div>
           </div>
         ) : (
-          <label className="mt-6 flex cursor-pointer flex-col items-center justify-center rounded-[28px] border border-dashed border-slate-300 bg-slate-50 px-6 py-10 text-center transition hover:border-[var(--color-teal)]/40 hover:bg-[var(--color-teal)]/5">
-            <UploadCloud className="h-10 w-10 text-[var(--color-teal)]" />
+          <label className="mt-6 flex cursor-pointer flex-col items-center justify-center rounded-[28px] border border-dashed border-slate-300 bg-slate-50 px-6 py-10 text-center transition hover:border-[var(--color-accent)]/40 hover:bg-[var(--color-accent)]/5">
+            <UploadCloud className="h-10 w-10 text-[var(--color-accent)]" />
             <p className="mt-4 text-sm font-semibold text-slate-800">{fileLabel}</p>
             <p className="mt-1 text-xs text-slate-500">Click to browse and upload</p>
             <input type="file" accept={accept} onChange={onFileChange} className="hidden" />
@@ -81,7 +81,7 @@ export default function FileUploadModal({
               <span>{Math.round(progress)}%</span>
             </div>
             <div className="mt-2 h-3 rounded-full bg-slate-100">
-              <div className="h-3 rounded-full bg-[var(--color-teal)] transition-all" style={{ width: `${Math.max(progress, 6)}%` }} />
+              <div className="h-3 rounded-full bg-[var(--color-accent)] transition-all" style={{ width: `${Math.max(progress, 6)}%` }} />
             </div>
           </div>
         ) : null}
@@ -95,7 +95,7 @@ export default function FileUploadModal({
               type="button"
               disabled={busy || disableSubmit}
               onClick={onSubmit}
-              className="rounded-2xl bg-[var(--color-teal)] px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
+              className="rounded-2xl bg-[var(--color-accent)] px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
             >
               {busy ? "Uploading..." : submitLabel}
             </button>

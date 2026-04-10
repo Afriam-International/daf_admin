@@ -156,16 +156,16 @@ function FeedFormModal({ open, title, form, busy, editingFeed, onClose, onChange
                       <p className="mt-1 text-xs text-slate-500">Remove it if you want to choose a different image.</p>
                     </div>
                     <label className="inline-flex cursor-pointer items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700">
-                      <ImagePlus className="h-4 w-4 text-[var(--color-teal)]" />
+                      <ImagePlus className="h-4 w-4 text-[var(--color-accent)]" />
                       Change
                       <input type="file" accept="image/*" className="hidden" onChange={(event) => onChange("image", event.target.files?.[0] || null)} />
                     </label>
                   </div>
                 </div>
               ) : (
-                <label className="flex cursor-pointer items-center justify-between gap-4 rounded-[24px] border border-dashed border-slate-300 bg-slate-50 px-4 py-4 transition hover:border-[var(--color-teal)]/40 hover:bg-[var(--color-teal)]/5">
+                <label className="flex cursor-pointer items-center justify-between gap-4 rounded-[24px] border border-dashed border-slate-300 bg-slate-50 px-4 py-4 transition hover:border-[var(--color-accent)]/40 hover:bg-[var(--color-accent)]/5">
                   <div className="flex items-center gap-3">
-                    <div className="grid h-12 w-12 place-items-center rounded-2xl bg-white text-[var(--color-teal)] shadow-sm">
+                    <div className="grid h-12 w-12 place-items-center rounded-2xl bg-white text-[var(--color-accent)] shadow-sm">
                       <ImagePlus className="h-5 w-5" />
                     </div>
                     <div>
@@ -173,7 +173,7 @@ function FeedFormModal({ open, title, form, busy, editingFeed, onClose, onChange
                       <p className="mt-1 text-xs text-slate-500">PNG or JPG works best.</p>
                     </div>
                   </div>
-                  <span className="rounded-2xl bg-white px-4 py-2 text-sm font-semibold text-[var(--color-teal)]">Browse</span>
+                  <span className="rounded-2xl bg-white px-4 py-2 text-sm font-semibold text-[var(--color-accent)]">Browse</span>
                   <input type="file" accept="image/*" className="hidden" onChange={(event) => onChange("image", event.target.files?.[0] || null)} />
                 </label>
               )}
@@ -195,7 +195,7 @@ function FeedFormModal({ open, title, form, busy, editingFeed, onClose, onChange
             <button type="button" onClick={onClose} className="rounded-2xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-700">
               Cancel
             </button>
-            <button type="submit" disabled={busy} className="rounded-2xl bg-[var(--color-teal)] px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-60">
+            <button type="submit" disabled={busy} className="rounded-2xl bg-[var(--color-accent)] px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-60">
               {busy ? "Saving..." : editingFeed ? "Update post" : "Create post"}
             </button>
           </div>
@@ -266,7 +266,7 @@ function FeedViewModal({ feed, onClose }) {
                 href={feed.postUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-2 rounded-2xl bg-[var(--color-teal)] px-5 py-3 text-sm font-semibold text-white"
+                className="inline-flex items-center gap-2 rounded-2xl bg-[var(--color-accent)] px-5 py-3 text-sm font-semibold text-white"
               >
                 {meta.button}
                 <ExternalLink className="h-4 w-4" />
@@ -408,7 +408,7 @@ export default function SocialFeedPage() {
         title="Social feed posts"
         description="Create curated Facebook and Instagram posts that the mobile app can render directly from the DAF backend."
         actions={
-          <button type="button" onClick={openCreateModal} className="inline-flex items-center gap-2 rounded-2xl bg-[var(--color-teal)] px-4 py-3 text-sm font-semibold text-white">
+          <button type="button" onClick={openCreateModal} className="inline-flex items-center gap-2 rounded-2xl bg-[var(--color-accent)] px-4 py-3 text-sm font-semibold text-white">
             <Plus className="h-4 w-4" />
             New Feed Post
           </button>
@@ -424,7 +424,7 @@ export default function SocialFeedPage() {
               onClick={() => setActiveFilter(option.value)}
               className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
                 activeFilter === option.value
-                  ? "bg-[var(--color-teal)] text-white shadow-[0_16px_40px_rgba(45,170,191,0.25)]"
+                  ? "bg-[var(--color-accent)] text-white shadow-[0_16px_40px_rgba(45,170,191,0.25)]"
                   : "border border-slate-200 bg-white text-slate-600"
               }`}
             >
@@ -453,7 +453,7 @@ export default function SocialFeedPage() {
       {loading ? (
         <PageLoader label="Loading social feed posts..." />
       ) : filteredFeeds.length ? (
-        <div className="grid gap-5 xl:grid-cols-2">
+        <div className="grid gap-5 xl:grid-cols-3">
           {filteredFeeds.map((feed) => {
             const meta = getTypeMeta(feed.type);
             const TypeIcon = meta.icon;
@@ -489,7 +489,7 @@ export default function SocialFeedPage() {
                         <Eye className="h-4 w-4" />
                         View
                       </button>
-                      <button type="button" onClick={() => openEditModal(feed)} className="inline-flex items-center gap-2 rounded-2xl border border-[var(--color-teal)]/20 px-4 py-2 text-sm font-medium text-[var(--color-teal)]">
+                      <button type="button" onClick={() => openEditModal(feed)} className="inline-flex items-center gap-2 rounded-2xl border border-[var(--color-accent)]/20 px-4 py-2 text-sm font-medium text-[var(--color-accent)]">
                         <Pencil className="h-4 w-4" />
                         Edit
                       </button>

@@ -71,7 +71,7 @@ export default function AnalyticsPage() {
             {stats.monthlyUsers.map((item) => (
               <div key={item.label} className="flex flex-1 flex-col items-center gap-3">
                 <div className="flex h-56 w-full items-end rounded-[24px] bg-slate-100 p-3">
-                  <div className="w-full rounded-[18px] bg-[linear-gradient(180deg,var(--color-teal),#1e8ea5)]" style={{ height: `${Math.max((item.value / maxMonthly) * 100, 8)}%` }} />
+                  <div className="w-full rounded-[18px] bg-[linear-gradient(180deg,var(--color-accent),#1e8ea5)]" style={{ height: `${Math.max((item.value / maxMonthly) * 100, 8)}%` }} />
                 </div>
                 <div className="text-center">
                   <p className="text-sm font-semibold text-slate-900">{item.value}</p>

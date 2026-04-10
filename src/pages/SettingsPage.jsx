@@ -132,7 +132,7 @@ export default function SettingsPage() {
 
           <button
             type="submit"
-            className="mt-6 inline-flex rounded-2xl bg-[var(--color-teal)] px-5 py-3 text-sm font-semibold text-white"
+            className="mt-6 inline-flex rounded-2xl bg-[var(--color-accent)] px-5 py-3 text-sm font-semibold text-white"
           >
             Save profile
           </button>

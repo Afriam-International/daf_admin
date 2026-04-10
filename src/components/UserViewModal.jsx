@@ -73,7 +73,7 @@ export default function UserViewModal({ open, title, user, permissions = null, o
         <div className="space-y-6 p-6">
           <section className="rounded-[28px] border border-slate-100 bg-slate-50/80 p-5">
             <div className="flex items-center gap-2">
-              <Mail className="h-4 w-4 text-[var(--color-teal)]" />
+              <Mail className="h-4 w-4 text-[var(--color-accent)]" />
               <h4 className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">Identity</h4>
             </div>
             <div className="mt-4 grid gap-4 md:grid-cols-2">
@@ -82,7 +82,7 @@ export default function UserViewModal({ open, title, user, permissions = null, o
                 return (
                   <div key={field.label} className="rounded-[24px] border border-white bg-white px-4 py-4 shadow-sm">
                     <div className="flex items-center gap-3">
-                      <div className="grid h-10 w-10 place-items-center rounded-2xl bg-[var(--color-teal)]/10 text-[var(--color-teal)]">
+                      <div className="grid h-10 w-10 place-items-center rounded-2xl bg-[var(--color-accent)]/10 text-[var(--color-accent)]">
                         <Icon className="h-4 w-4" />
                       </div>
                       <div>
@@ -98,7 +98,7 @@ export default function UserViewModal({ open, title, user, permissions = null, o
 
           <section className="rounded-[28px] border border-slate-100 bg-white p-5 shadow-[0_12px_30px_rgba(15,23,42,0.04)]">
             <div className="flex items-center gap-2">
-              <MapPin className="h-4 w-4 text-[var(--color-teal)]" />
+              <MapPin className="h-4 w-4 text-[var(--color-accent)]" />
               <h4 className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">Demographics</h4>
             </div>
             <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -113,7 +113,7 @@ export default function UserViewModal({ open, title, user, permissions = null, o
 
           <section className="rounded-[28px] border border-slate-100 bg-white p-5 shadow-[0_12px_30px_rgba(15,23,42,0.04)]">
             <div className="flex items-center gap-2">
-              <CalendarDays className="h-4 w-4 text-[var(--color-teal)]" />
+              <CalendarDays className="h-4 w-4 text-[var(--color-accent)]" />
               <h4 className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">Timeline</h4>
             </div>
             <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -129,7 +129,7 @@ export default function UserViewModal({ open, title, user, permissions = null, o
           {permissions ? (
             <section className="rounded-[28px] border border-slate-100 bg-white p-5 shadow-[0_12px_30px_rgba(15,23,42,0.04)]">
               <div className="flex items-center gap-2">
-                <Shield className="h-4 w-4 text-[var(--color-teal)]" />
+                <Shield className="h-4 w-4 text-[var(--color-accent)]" />
                 <h4 className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">Permissions</h4>
               </div>
               <div className="mt-4 grid gap-3 md:grid-cols-2">

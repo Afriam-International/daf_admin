@@ -16,7 +16,7 @@ export default function Sidebar({ nav, onNavigate }) {
   });
 
   return (
-    <div className="flex h-full min-h-0 flex-col bg-[linear-gradient(180deg,#4A2C1F_0%,#382117_100%)] text-white">
+    <div className="flex h-full min-h-0 flex-col bg-[linear-gradient(180deg,#000_0%,#000000_100%)] text-white">
       <div className="shrink-0 border-b border-white/10 px-5 py-5">
         <div className="flex items-center gap-3">
           <div className="grid h-14 w-14 place-items-center overflow-hidden rounded-2xl bg-white/10 p-1">
@@ -45,7 +45,7 @@ export default function Sidebar({ nav, onNavigate }) {
                 className={({ isActive }) =>
                   joinClasses(
                     "flex items-center gap-3 rounded-2xl px-3 py-3 text-sm font-medium text-white/72 transition hover:bg-white/10 hover:text-white",
-                    isActive && "bg-[var(--color-teal)] text-white shadow-[0_16px_40px_rgba(45,170,191,0.3)]",
+                    isActive && "bg-[var(--color-accent)] text-white",
                   )
                 }
               >

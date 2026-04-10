@@ -14,6 +14,7 @@ import DeletionRequestsPage from "./pages/DeletionRequestsPage";
 import DonationsPage from "./pages/DonationsPage";
 import GalleryPage from "./pages/GalleryPage";
 import SocialFeedPage from "./pages/SocialFeedPage";
+import FaqsPage from "./pages/FaqsPage";
 import AnalyticsPage from "./pages/AnalyticsPage";
 import PermissionsPage from "./pages/PermissionsPage";
 import ActivityLogsPage from "./pages/ActivityLogsPage";
@@ -54,6 +55,7 @@ export default function App() {
             <Route path="donations" element={<AccessRoute roles="superadmin"><DonationsPage /></AccessRoute>} />
             <Route path="gallery" element={<GalleryPage />} />
             <Route path="social-feed" element={<SocialFeedPage />} />
+            <Route path="faqs" element={<FaqsPage />} />
             <Route path="blog" element={<BlogPage />} />
             <Route path="permissions" element={<AccessRoute roles="superadmin"><PermissionsPage /></AccessRoute>} />
             <Route path="activity-logs" element={<AccessRoute roles="superadmin"><ActivityLogsPage /></AccessRoute>} />

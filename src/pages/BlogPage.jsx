@@ -75,7 +75,7 @@ export default function BlogPage() {
               <div className="space-y-4 p-5">
                 <h2 className="line-clamp-3 text-lg font-semibold text-slate-900" dangerouslySetInnerHTML={{ __html: post.title?.rendered || "" }} />
                 <div className="line-clamp-4 text-sm text-slate-600" dangerouslySetInnerHTML={{ __html: post.excerpt?.rendered || "" }} />
-                <a href={post.link} target="_blank" rel="noreferrer" className="inline-flex rounded-2xl bg-[var(--color-teal)] px-4 py-2.5 text-sm font-semibold text-white">Read post</a>
+                <a href={post.link} target="_blank" rel="noreferrer" className="inline-flex rounded-2xl bg-[var(--color-accent)] px-4 py-2.5 text-sm font-semibold text-white">Read post</a>
               </div>
             </article>
           ))}

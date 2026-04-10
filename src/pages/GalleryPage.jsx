@@ -88,7 +88,7 @@ export default function GalleryPage() {
         title="Gallery images"
         description="Manage the images that appear in the DAF app."
         actions={
-          <button type="button" onClick={() => setUploadOpen(true)} className="inline-flex items-center gap-2 rounded-2xl bg-[var(--color-teal)] px-4 py-3 text-sm font-semibold text-white">
+          <button type="button" onClick={() => setUploadOpen(true)} className="inline-flex items-center gap-2 rounded-2xl bg-[var(--color-accent)] px-4 py-3 text-sm font-semibold text-white">
             <ImagePlus className="h-4 w-4" />
             Upload image
           </button>

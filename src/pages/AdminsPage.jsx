@@ -158,7 +158,7 @@ export default function AdminsPage() {
           <input value={form.contact} onChange={(e) => setForm((c) => ({ ...c, contact: e.target.value }))} placeholder="Contact" className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none" />
           <div className="flex gap-3">
             <input value={form.password} onChange={(e) => setForm((c) => ({ ...c, password: e.target.value }))} placeholder="Temporary password" className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none" />
-            <button type="submit" className="inline-flex items-center gap-2 rounded-2xl bg-[var(--color-teal)] px-4 py-3 text-sm font-semibold text-white">
+            <button type="submit" className="inline-flex items-center gap-2 rounded-2xl bg-[var(--color-accent)] px-4 py-3 text-sm font-semibold text-white">
               <Plus className="h-4 w-4" />
               Add
             </button>
@@ -228,7 +228,7 @@ export default function AdminsPage() {
                               <Eye className="h-4 w-4" />
                               View
                             </button>
-                            <button type="button" onClick={() => setSelectedAdmin(admin)} className="inline-flex items-center gap-2 rounded-2xl border border-[var(--color-teal)]/20 px-4 py-2 text-sm font-medium text-[var(--color-teal)]">
+                            <button type="button" onClick={() => setSelectedAdmin(admin)} className="inline-flex items-center gap-2 rounded-2xl border border-[var(--color-accent)]/20 px-4 py-2 text-sm font-medium text-[var(--color-accent)]">
                               <Pencil className="h-4 w-4" />
                               Edit
                             </button>

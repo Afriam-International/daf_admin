@@ -7,6 +7,7 @@ const permissionFields = [
   { key: "canViewAnalytics", label: "View Analytics" },
   { key: "canManageBlog", label: "Manage Blog" },
   { key: "canManageFeed", label: "Manage Social Feed" },
+  { key: "canManageFaqs", label: "Manage FAQs" },
   { key: "canManageDeletionRequests", label: "Manage Deletion Requests" },
   { key: "canViewActivityLog", label: "View Activity Log" },
 ];
@@ -114,7 +115,7 @@ export default function UserEditModal({
                           [field.key]: event.target.checked,
                         }))
                       }
-                      className="h-5 w-5 rounded border-slate-300 text-[var(--color-teal)] focus:ring-[var(--color-teal)]"
+                      className="h-5 w-5 rounded border-slate-300 text-[var(--color-accent)] focus:ring-[var(--color-accent)]"
                     />
                   </label>
                 ))}
@@ -126,7 +127,7 @@ export default function UserEditModal({
             <button type="button" onClick={onClose} className="rounded-2xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-700">
               Cancel
             </button>
-            <button type="submit" disabled={busy} className="rounded-2xl bg-[var(--color-teal)] px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-60">
+            <button type="submit" disabled={busy} className="rounded-2xl bg-[var(--color-accent)] px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-60">
               {busy ? "Saving..." : "Save changes"}
             </button>
           </div>

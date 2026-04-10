@@ -40,7 +40,7 @@ export default function Topbar({ onOpenSidebar }) {
             <Settings className="h-4 w-4" />
           </button>
           <div className="hidden items-center gap-3 rounded-2xl border border-slate-200 bg-white px-3 py-2 sm:flex">
-            <div className="grid h-10 w-10 place-items-center rounded-2xl bg-[var(--color-teal)] text-sm font-semibold text-white">
+            <div className="grid h-10 w-10 place-items-center rounded-2xl bg-[var(--color-accent)] text-sm font-semibold text-white">
               {initials || "AD"}
             </div>
             <div className="leading-tight">

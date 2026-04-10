@@ -89,7 +89,7 @@ export default function DonationsPage() {
       ) : (
         <>
           <div className="grid gap-4 md:grid-cols-4">
-            <StatCard title="Campaigns" value={stats.totalDonations} icon={Gift} helper="Tracked causes" accent="teal" />
+            <StatCard title="Campaigns" value={stats.totalDonations} icon={Gift} helper="Tracked causes" accent="accent" />
             <StatCard title="Active campaigns" value={stats.activeCampaigns} icon={Wallet} helper="Live in Givebutter" accent="brown" />
             <StatCard title="Total raised" value={formatCurrency(stats.totalRaised)} icon={Gift} helper="Across selected causes" accent="accent" />
             <StatCard title="Total donors" value={stats.totalDonors || 0} icon={Wallet} helper="Givebutter donor count" accent="sand" />
@@ -119,7 +119,7 @@ export default function DonationsPage() {
                         <p className="mt-1 font-semibold text-slate-900">{formatCurrency(campaign.goal)}</p>
                       </div>
                     </div>
-                    {campaign.url ? <a href={campaign.url} target="_blank" rel="noreferrer" className="inline-flex rounded-2xl bg-[var(--color-teal)] px-4 py-2.5 text-sm font-semibold text-white">Open in Givebutter</a> : null}
+                    {campaign.url ? <a href={campaign.url} target="_blank" rel="noreferrer" className="inline-flex rounded-2xl bg-[var(--color-accent)] px-4 py-2.5 text-sm font-semibold text-white">Open in Givebutter</a> : null}
                   </div>
                 </article>
               ))}

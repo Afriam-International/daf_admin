@@ -87,7 +87,7 @@ export default function LoginPage() {
       ) : null}
 
       <div className="flex justify-end">
-        <Link to="/forgot-password" className="text-sm font-medium text-[var(--color-teal)]">
+        <Link to="/forgot-password" className="text-sm font-medium text-[var(--color-accent)]">
           Forgot password?
         </Link>
       </div>
