@@ -49,7 +49,7 @@ export default function App() {
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<AdminOverviewPage />} />
             <Route path="analytics" element={<AccessRoute roles="superadmin"><AnalyticsPage /></AccessRoute>} />
-            <Route path="users" element={<UsersPage />} />
+            <Route path="users" element={<AccessRoute roles="superadmin"><UsersPage /></AccessRoute>} />
             <Route path="admins" element={<AccessRoute roles="superadmin"><AdminsPage /></AccessRoute>} />
             <Route path="deletion-requests" element={<DeletionRequestsPage />} />
             <Route path="donations" element={<AccessRoute roles="superadmin"><DonationsPage /></AccessRoute>} />

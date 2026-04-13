@@ -17,7 +17,7 @@ import {
 export const adminNav = [
   { label: "Overview", to: "/admin", icon: LayoutDashboard, roles: ["admin", "superadmin"] },
   { label: "Analytics", to: "/admin/analytics", icon: BarChart3, roles: ["superadmin"], permission: "canViewAnalytics" },
-  { label: "Users", to: "/admin/users", icon: Users, roles: ["admin", "superadmin"], permission: "canManageUsers" },
+  { label: "Users", to: "/admin/users", icon: Users, roles: ["superadmin"], permission: "canManageUsers" },
   { label: "Admins", to: "/admin/admins", icon: Shield, roles: ["superadmin"] },
   { label: "Deletion Requests", to: "/admin/deletion-requests", icon: Trash2, roles: ["admin", "superadmin"], permission: "canManageDeletionRequests" },
   { label: "Donations", to: "/admin/donations", icon: Gift, roles: ["superadmin"], permission: "canViewDonations" },
