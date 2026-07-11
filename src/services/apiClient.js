@@ -1,10 +1,14 @@
 import axios from "axios";
 import { storage } from "./storage";
 
+const apiBaseUrl = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
+const isNgrokApi = /ngrok-free\.app/i.test(apiBaseUrl);
+
 const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "http://localhost:8000/api",
+  baseURL: apiBaseUrl,
   headers: {
     "Content-Type": "application/json",
+    ...(isNgrokApi ? { "ngrok-skip-browser-warning": "true" } : {}),
   },
 });
 
@@ -13,6 +17,11 @@ apiClient.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+
+  if (isNgrokApi) {
+    config.headers["ngrok-skip-browser-warning"] = "true";
+  }
+
   return config;
 });
 

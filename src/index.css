@@ -51,3 +51,76 @@ textarea {
   border-radius: 999px;
   background: linear-gradient(180deg, #2daabf, #4a2c1f);
 }
+
+.rich-text-editor:empty::before {
+  content: attr(data-placeholder);
+  color: #94a3b8;
+  pointer-events: none;
+}
+
+.rich-text-editor ul {
+  margin: 0.5rem 0;
+  padding-left: 1.25rem;
+  list-style: disc;
+}
+
+.rich-text-editor ol {
+  margin: 0.5rem 0;
+  padding-left: 1.25rem;
+  list-style: decimal;
+}
+
+.rich-text-editor p {
+  margin: 0 0 0.5rem;
+}
+
+.rich-text-editor p:last-child {
+  margin-bottom: 0;
+}
+
+.info-rich-content p {
+  margin: 0 0 0.75rem;
+  line-height: 1.6;
+}
+
+.info-rich-content ul,
+.info-rich-content ol {
+  margin: 0 0 0.75rem;
+  padding-left: 1.25rem;
+}
+
+.info-rich-content ul {
+  list-style: disc;
+}
+
+.info-rich-content ol {
+  list-style: decimal;
+}
+
+.rich-text-editor a,
+.info-rich-content a {
+  color: var(--color-accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.rich-text-editor strong,
+.info-rich-content strong {
+  font-weight: 600;
+  color: var(--color-brown);
+}
+
+.info-rich-content h2,
+.info-rich-content h3 {
+  margin: 1.25rem 0 0.75rem;
+  font-weight: 600;
+  color: var(--color-brown);
+}
+
+.info-rich-content h2 {
+  font-size: 1.125rem;
+}
+
+.info-rich-content h3 {
+  font-size: 1rem;
+}
