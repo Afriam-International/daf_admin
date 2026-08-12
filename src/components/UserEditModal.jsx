@@ -8,6 +8,8 @@ const permissionFields = [
   { key: "canManageBlog", label: "Manage Blog" },
   { key: "canManageFeed", label: "Manage Social Feed" },
   { key: "canManageFaqs", label: "Manage FAQs" },
+  { key: "canManageInfos", label: "Manage Info" },
+  { key: "canSendNotifications", label: "Send Notifications" },
   { key: "canManageDeletionRequests", label: "Manage Deletion Requests" },
   { key: "canViewActivityLog", label: "View Activity Log" },
 ];

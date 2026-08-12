@@ -1,6 +1,7 @@
 import {
   Activity,
   BarChart3,
+  BellRing,
   BookOpenText,
   Gift,
   Images,
@@ -27,6 +28,7 @@ export const adminNav = [
   { label: "Blog", to: "/admin/blog", icon: BookOpenText, roles: ["admin", "superadmin"], permission: "canManageBlog" },
   { label: "FAQs", to: "/admin/faqs", icon: MessageCircleQuestion, roles: ["admin", "superadmin"], permission: "canManageFaqs" },
   { label: "Information Center", to: "/admin/infos", icon: FileText, roles: ["admin", "superadmin"], permission: "canManageInfos" },
+  { label: "Notifications", to: "/admin/notifications", icon: BellRing, roles: ["admin", "superadmin"], permission: "canSendNotifications" },
   { label: "Roles & Permissions", to: "/admin/permissions", icon: KeyRound, roles: ["superadmin"] },
   { label: "Activity Log", to: "/admin/activity-logs", icon: Activity, roles: ["superadmin"], permission: "canViewActivityLog" },
   { label: "Settings", to: "/admin/settings", icon: Settings, roles: ["admin", "superadmin"] },
