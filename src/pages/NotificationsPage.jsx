@@ -252,10 +252,17 @@ export default function NotificationsPage() {
               ? displayName(selectedUsers[0])
               : `${selectedUsers.length} selected users`;
 
-      toast.success(
-        `Sent to ${targetLabel} · ${result?.successCount ?? 0} delivered` +
-          (result?.failureCount ? `, ${result.failureCount} failed` : ""),
-      );
+      if (result?.failureCount && !result?.successCount) {
+        toast.error(result.hint || `Send failed for ${targetLabel}.`);
+      } else if (result?.failureCount) {
+        toast.warning(
+          `Sent to ${targetLabel} · ${result.successCount ?? 0} delivered, ${result.failureCount} failed. See details below.`,
+        );
+      } else {
+        toast.success(
+          `Sent to ${targetLabel} · ${result?.successCount ?? 0} delivered.`,
+        );
+      }
 
       setForm((prev) => ({ ...emptyForm, audience: prev.audience }));
       if (form.audience === "all" || form.audience === "status") {
@@ -486,6 +493,8 @@ export default function NotificationsPage() {
                             </span>
                             <span className="block truncate text-xs text-slate-500">
                               {user.email} · {statusLabel(user.status)}
+                              {user.tokenCount ? ` · ${user.tokenCount} token${user.tokenCount === 1 ? "" : "s"}` : ""}
+                              {user.deviceType ? ` · last device ${user.deviceType}` : ""}
                             </span>
                           </span>
                           <span
@@ -495,7 +504,9 @@ export default function NotificationsPage() {
                                 : "bg-amber-50 text-amber-700"
                             }`}
                           >
-                            {user.hasPushToken ? "Push ready" : "No token"}
+                            {user.hasPushToken
+                              ? `${user.tokenCount || 1} token${(user.tokenCount || 1) === 1 ? "" : "s"}`
+                              : "No token"}
                           </span>
                         </label>
                       );
@@ -605,6 +616,20 @@ export default function NotificationsPage() {
                           {entry.actorName || "System"} ·{" "}
                           {formatDateTime(entry.createdAt)}
                         </p>
+                        {entry.metadata?.hint ? (
+                          <p className="mt-2 text-xs leading-5 text-slate-600">
+                            {entry.metadata.hint}
+                          </p>
+                        ) : null}
+                        {(entry.metadata?.failureSummary || []).length ? (
+                          <ul className="mt-2 space-y-1 text-xs text-rose-700">
+                            {entry.metadata.failureSummary.map((item) => (
+                              <li key={`${entry.id}-${item.code}`}>
+                                {item.count}× {item.code}: {item.hint}
+                              </li>
+                            ))}
+                          </ul>
+                        ) : null}
                       </div>
                       <div className="shrink-0 text-right text-xs">
                         <p className="inline-flex items-center gap-1 font-medium text-emerald-700">
@@ -655,8 +680,11 @@ export default function NotificationsPage() {
           {lastResult ? (
             <div className="rounded-[28px] border border-white/70 bg-white/80 p-6 shadow-[0_24px_60px_rgba(74,44,31,0.08)]">
               <h3 className="text-base font-semibold text-[var(--color-brown)]">
-                Last send result
+                Last send debug
               </h3>
+              <p className="mt-2 text-sm leading-6 text-slate-600">
+                {lastResult.hint || lastResult.message}
+              </p>
               <dl className="mt-4 space-y-2 text-sm text-slate-600">
                 <div className="flex justify-between gap-4">
                   <dt>Users targeted</dt>
@@ -671,18 +699,99 @@ export default function NotificationsPage() {
                   </dd>
                 </div>
                 <div className="flex justify-between gap-4">
-                  <dt>Delivered</dt>
+                  <dt>Accepted by Firebase</dt>
                   <dd className="font-medium text-emerald-700">
                     {lastResult.successCount ?? 0}
                   </dd>
                 </div>
                 <div className="flex justify-between gap-4">
-                  <dt>Failed</dt>
+                  <dt>Rejected by Firebase</dt>
                   <dd className="font-medium text-rose-700">
                     {lastResult.failureCount ?? 0}
                   </dd>
                 </div>
+                <div className="flex justify-between gap-4">
+                  <dt>Dead tokens removed</dt>
+                  <dd className="font-medium text-slate-900">
+                    {lastResult.invalidTokensRemoved ?? 0}
+                  </dd>
+                </div>
               </dl>
+
+              {(lastResult.failureSummary || []).length ? (
+                <div className="mt-5">
+                  <h4 className="text-sm font-semibold text-slate-800">Why it failed</h4>
+                  <div className="mt-2 space-y-2">
+                    {lastResult.failureSummary.map((item) => (
+                      <div
+                        key={item.code}
+                        className="rounded-2xl border border-rose-100 bg-rose-50 px-4 py-3 text-sm text-rose-800"
+                      >
+                        <p className="font-semibold">
+                          {item.count} device{item.count === 1 ? "" : "s"} · {item.code}
+                        </p>
+                        <p className="mt-1 text-xs leading-5">{item.hint}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+
+              {(lastResult.usersWithoutTokens || []).length ? (
+                <div className="mt-5">
+                  <h4 className="text-sm font-semibold text-slate-800">
+                    Users with no token
+                  </h4>
+                  <ul className="mt-2 space-y-1 text-xs text-amber-700">
+                    {lastResult.usersWithoutTokens.map((user) => (
+                      <li key={user.id}>
+                        {user.name || user.email || user.id} must open the app and log in.
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+
+              {(lastResult.tokenResults || []).length ? (
+                <div className="mt-5">
+                  <h4 className="text-sm font-semibold text-slate-800">
+                    Device-by-device
+                  </h4>
+                  <div className="mt-2 max-h-72 space-y-2 overflow-y-auto">
+                    {lastResult.tokenResults.map((item, index) => (
+                      <div
+                        key={`${item.tokenPreview}-${index}`}
+                        className={`rounded-2xl border px-4 py-3 text-xs ${
+                          item.success
+                            ? "border-emerald-100 bg-emerald-50 text-emerald-800"
+                            : "border-rose-100 bg-rose-50 text-rose-800"
+                        }`}
+                      >
+                        <p className="font-semibold">
+                          {item.success ? "Accepted" : "Failed"} ·{" "}
+                          {item.userEmail || item.userName || "Unknown user"}
+                          {item.lastDeviceType ? ` · last device ${item.lastDeviceType}` : ""}
+                        </p>
+                        <p className="mt-1 font-mono text-[11px] opacity-80">
+                          token {item.tokenPreview}
+                        </p>
+                        <p className="mt-1 leading-5">
+                          {item.code ? `${item.code}: ` : ""}
+                          {item.hint}
+                        </p>
+                        {item.removed ? (
+                          <p className="mt-1 font-medium">Dead token was removed from the user.</p>
+                        ) : null}
+                      </div>
+                    ))}
+                  </div>
+                  {lastResult.tokenResultTruncated ? (
+                    <p className="mt-2 text-xs text-slate-500">
+                      Showing the first {lastResult.tokenResults.length} device results.
+                    </p>
+                  ) : null}
+                </div>
+              ) : null}
             </div>
           ) : null}
         </div>
