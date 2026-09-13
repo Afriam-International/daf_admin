@@ -176,9 +176,15 @@ function SendDebugDetails({
                 key={item.code}
                 className="rounded-2xl border border-rose-100 bg-rose-50 px-4 py-3 text-sm text-rose-800"
               >
-                <p className="font-semibold">
-                  {item.count} device{item.count === 1 ? "" : "s"} · {item.code}
-                </p>
+                        <p className="font-semibold">
+                          {item.count} device{item.count === 1 ? "" : "s"} ·{" "}
+                          {item.code}
+                          {item.deviceTypes
+                            ? ` · ${Object.entries(item.deviceTypes)
+                                .map(([platform, count]) => `${count} ${platform}`)
+                                .join(", ")}`
+                            : ""}
+                        </p>
                 <p className="mt-1 text-xs leading-5">{item.hint}</p>
               </div>
             ))}
@@ -219,10 +225,11 @@ function SendDebugDetails({
               >
                 <p className="font-semibold">
                   {item.success ? "Accepted" : "Failed"} ·{" "}
+                  <span className="uppercase tracking-wide">
+                    {item.deviceType || item.lastDeviceType || "unknown"}
+                  </span>
+                  {" · "}
                   {item.userEmail || item.userName || "Unknown user"}
-                  {item.lastDeviceType
-                    ? ` · last device ${item.lastDeviceType}`
-                    : ""}
                 </p>
                 <p className="mt-1 font-mono text-[11px] opacity-80">
                   token {item.tokenPreview}
