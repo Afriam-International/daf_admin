@@ -12,5 +12,6 @@ export const notificationService = {
     apiClient.get("/notifications/analytics", {
       params: { days },
     }),
+  getSendDetail: (id) => apiClient.get(`/notifications/sends/${id}`),
   test: (payload) => apiClient.post("/notifications/test", payload),
 };

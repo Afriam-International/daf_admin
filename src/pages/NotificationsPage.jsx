@@ -41,6 +41,215 @@ const actionLabel = (action = "") =>
     .replace(/^notification\./, "")
     .replace(/_/g, " ");
 
+const sendStatusMeta = (status) => {
+  switch (status) {
+    case "success":
+      return {
+        label: "Successful",
+        className: "bg-emerald-50 text-emerald-800 border-emerald-100",
+      };
+    case "partial":
+      return {
+        label: "Partial",
+        className: "bg-amber-50 text-amber-800 border-amber-100",
+      };
+    case "failed":
+      return {
+        label: "Failed",
+        className: "bg-rose-50 text-rose-800 border-rose-100",
+      };
+    case "no_tokens":
+      return {
+        label: "No tokens",
+        className: "bg-slate-100 text-slate-700 border-slate-200",
+      };
+    default:
+      return {
+        label: status || "Unknown",
+        className: "bg-slate-100 text-slate-700 border-slate-200",
+      };
+  }
+};
+
+function SendDebugDetails({
+  title = "Send debug",
+  subtitle,
+  status,
+  summary = {},
+  failureSummary = [],
+  usersWithoutTokens = [],
+  tokenResults = [],
+  tokenResultTruncated = false,
+  statuses = [],
+  userIds = [],
+}) {
+  const statusMeta = sendStatusMeta(status);
+
+  return (
+    <div>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h3 className="text-base font-semibold text-[var(--color-brown)]">
+            {title}
+          </h3>
+          {subtitle ? (
+            <p className="mt-1 text-sm text-slate-500">{subtitle}</p>
+          ) : null}
+        </div>
+        {status ? (
+          <span
+            className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${statusMeta.className}`}
+          >
+            {statusMeta.label}
+          </span>
+        ) : null}
+      </div>
+
+      {(summary.title || summary.body) && (
+        <div className="mt-4 rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3">
+          {summary.title ? (
+            <p className="text-sm font-semibold text-slate-900">{summary.title}</p>
+          ) : null}
+          {summary.body ? (
+            <p className="mt-1 text-sm leading-6 text-slate-600">{summary.body}</p>
+          ) : null}
+          <p className="mt-2 text-xs text-slate-500">
+            {[summary.type, summary.audience].filter(Boolean).join(" · ") ||
+              "custom"}
+            {statuses.length
+              ? ` · status: ${statuses.map(statusLabel).join(", ")}`
+              : ""}
+            {userIds.length ? ` · ${userIds.length} user id(s)` : ""}
+          </p>
+        </div>
+      )}
+
+      {summary.hint ? (
+        <p className="mt-3 text-sm leading-6 text-slate-600">{summary.hint}</p>
+      ) : null}
+
+      <dl className="mt-4 space-y-2 text-sm text-slate-600">
+        <div className="flex justify-between gap-4">
+          <dt>Users targeted</dt>
+          <dd className="font-medium text-slate-900">
+            {summary.recipientUserCount ?? "—"}
+          </dd>
+        </div>
+        <div className="flex justify-between gap-4">
+          <dt>Devices targeted</dt>
+          <dd className="font-medium text-slate-900">
+            {summary.recipientTokenCount ?? "—"}
+          </dd>
+        </div>
+        <div className="flex justify-between gap-4">
+          <dt>Accepted by Firebase</dt>
+          <dd className="font-medium text-emerald-700">
+            {summary.successCount ?? 0}
+          </dd>
+        </div>
+        <div className="flex justify-between gap-4">
+          <dt>Rejected by Firebase</dt>
+          <dd className="font-medium text-rose-700">
+            {summary.failureCount ?? 0}
+          </dd>
+        </div>
+        <div className="flex justify-between gap-4">
+          <dt>Dead tokens removed</dt>
+          <dd className="font-medium text-slate-900">
+            {summary.invalidTokensRemoved ?? 0}
+          </dd>
+        </div>
+        {summary.skipped ? (
+          <div className="flex justify-between gap-4">
+            <dt>Skipped</dt>
+            <dd className="font-medium text-amber-700">Yes</dd>
+          </div>
+        ) : null}
+      </dl>
+
+      {failureSummary.length ? (
+        <div className="mt-5">
+          <h4 className="text-sm font-semibold text-slate-800">Why it failed</h4>
+          <div className="mt-2 space-y-2">
+            {failureSummary.map((item) => (
+              <div
+                key={item.code}
+                className="rounded-2xl border border-rose-100 bg-rose-50 px-4 py-3 text-sm text-rose-800"
+              >
+                <p className="font-semibold">
+                  {item.count} device{item.count === 1 ? "" : "s"} · {item.code}
+                </p>
+                <p className="mt-1 text-xs leading-5">{item.hint}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      {usersWithoutTokens.length ? (
+        <div className="mt-5">
+          <h4 className="text-sm font-semibold text-slate-800">
+            Users with no token
+          </h4>
+          <ul className="mt-2 space-y-1 text-xs text-amber-700">
+            {usersWithoutTokens.map((user) => (
+              <li key={user.id}>
+                {user.name || user.email || user.id} must open the app and log
+                in.
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
+      {tokenResults.length ? (
+        <div className="mt-5">
+          <h4 className="text-sm font-semibold text-slate-800">
+            Device-by-device
+          </h4>
+          <div className="mt-2 max-h-72 space-y-2 overflow-y-auto">
+            {tokenResults.map((item, index) => (
+              <div
+                key={`${item.tokenPreview}-${index}`}
+                className={`rounded-2xl border px-4 py-3 text-xs ${
+                  item.success
+                    ? "border-emerald-100 bg-emerald-50 text-emerald-800"
+                    : "border-rose-100 bg-rose-50 text-rose-800"
+                }`}
+              >
+                <p className="font-semibold">
+                  {item.success ? "Accepted" : "Failed"} ·{" "}
+                  {item.userEmail || item.userName || "Unknown user"}
+                  {item.lastDeviceType
+                    ? ` · last device ${item.lastDeviceType}`
+                    : ""}
+                </p>
+                <p className="mt-1 font-mono text-[11px] opacity-80">
+                  token {item.tokenPreview}
+                </p>
+                <p className="mt-1 leading-5">
+                  {item.code ? `${item.code}: ` : ""}
+                  {item.hint}
+                </p>
+                {item.removed ? (
+                  <p className="mt-1 font-medium">
+                    Dead token was removed from the user.
+                  </p>
+                ) : null}
+              </div>
+            ))}
+          </div>
+          {tokenResultTruncated ? (
+            <p className="mt-2 text-xs text-slate-500">
+              Showing the first {tokenResults.length} device results.
+            </p>
+          ) : null}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 function StatCard({ icon: Icon, label, value, hint }) {
   return (
     <div className="rounded-[24px] border border-white/70 bg-white/90 p-5 shadow-[0_16px_40px_rgba(74,44,31,0.06)]">
@@ -78,9 +287,33 @@ export default function NotificationsPage() {
 
   const [analytics, setAnalytics] = useState(null);
   const [loadingAnalytics, setLoadingAnalytics] = useState(true);
+  const [sendDetail, setSendDetail] = useState(null);
+  const [loadingSendDetail, setLoadingSendDetail] = useState(false);
 
   const onChange = (field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const openSendDetail = async (id) => {
+    if (!id) return;
+    setLoadingSendDetail(true);
+    setSendDetail(null);
+    try {
+      const response = await notificationService.getSendDetail(id);
+      setSendDetail(response.data?.data || null);
+    } catch (err) {
+      toast.error(
+        err.response?.data?.message || "Unable to load notification details.",
+      );
+      setSendDetail(null);
+    } finally {
+      setLoadingSendDetail(false);
+    }
+  };
+
+  const closeSendDetail = () => {
+    setSendDetail(null);
+    setLoadingSendDetail(false);
   };
 
   const needsUserPicker = form.audience === "one" || form.audience === "many";
@@ -241,7 +474,17 @@ export default function NotificationsPage() {
 
       const response = await notificationService.broadcast(payload);
       const result = response.data?.data;
-      setLastResult(result || null);
+      setLastResult(
+        result
+          ? {
+              ...result,
+              title: payload.title,
+              body: payload.body,
+              type: payload.type,
+              audience: payload.audience,
+            }
+          : null,
+      );
 
       const targetLabel =
         form.audience === "all"
@@ -585,7 +828,8 @@ export default function NotificationsPage() {
                   Recent sends
                 </h3>
                 <p className="mt-1 text-sm text-slate-500">
-                  Latest admin push activity from the last week.
+                  Latest admin push activity from the last week. Click a row for
+                  full delivery details.
                 </p>
               </div>
               <button
@@ -601,49 +845,67 @@ export default function NotificationsPage() {
               {loadingAnalytics ? (
                 <p className="text-sm text-slate-500">Loading analytics...</p>
               ) : analytics?.recent?.length ? (
-                analytics.recent.map((entry) => (
-                  <div
-                    key={entry.id}
-                    className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-medium text-slate-800">
-                          {entry.description}
-                        </p>
-                        <p className="mt-1 text-xs text-slate-500">
-                          {actionLabel(entry.action)} ·{" "}
-                          {entry.actorName || "System"} ·{" "}
-                          {formatDateTime(entry.createdAt)}
-                        </p>
-                        {entry.metadata?.hint ? (
-                          <p className="mt-2 text-xs leading-5 text-slate-600">
-                            {entry.metadata.hint}
+                analytics.recent.map((entry) => {
+                  const status =
+                    entry.metadata?.status ||
+                    (entry.metadata?.skipped ||
+                    !(entry.metadata?.recipientTokenCount || 0)
+                      ? "no_tokens"
+                      : entry.metadata?.failureCount &&
+                          !entry.metadata?.successCount
+                        ? "failed"
+                        : entry.metadata?.failureCount
+                          ? "partial"
+                          : "success");
+                  const statusMeta = sendStatusMeta(status);
+
+                  return (
+                    <button
+                      type="button"
+                      key={entry.id}
+                      onClick={() => openSendDetail(entry.id)}
+                      className="w-full rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3 text-left transition hover:border-[var(--color-accent)]/40 hover:bg-white"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <p className="truncate text-sm font-medium text-slate-800">
+                              {entry.metadata?.title || entry.description}
+                            </p>
+                            <span
+                              className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-semibold ${statusMeta.className}`}
+                            >
+                              {statusMeta.label}
+                            </span>
+                          </div>
+                          <p className="mt-1 text-xs text-slate-500">
+                            {actionLabel(entry.action)} ·{" "}
+                            {entry.actorName || "System"} ·{" "}
+                            {formatDateTime(entry.createdAt)}
                           </p>
-                        ) : null}
-                        {(entry.metadata?.failureSummary || []).length ? (
-                          <ul className="mt-2 space-y-1 text-xs text-rose-700">
-                            {entry.metadata.failureSummary.map((item) => (
-                              <li key={`${entry.id}-${item.code}`}>
-                                {item.count}× {item.code}: {item.hint}
-                              </li>
-                            ))}
-                          </ul>
-                        ) : null}
+                          {entry.metadata?.hint ? (
+                            <p className="mt-2 line-clamp-2 text-xs leading-5 text-slate-600">
+                              {entry.metadata.hint}
+                            </p>
+                          ) : null}
+                        </div>
+                        <div className="shrink-0 text-right text-xs">
+                          <p className="inline-flex items-center gap-1 font-medium text-emerald-700">
+                            <CheckCircle2 size={12} />
+                            {entry.metadata?.successCount ?? 0}
+                          </p>
+                          <p className="mt-1 inline-flex items-center gap-1 font-medium text-rose-600">
+                            <XCircle size={12} />
+                            {entry.metadata?.failureCount ?? 0}
+                          </p>
+                          <p className="mt-2 text-[10px] font-medium uppercase tracking-[0.14em] text-slate-400">
+                            View
+                          </p>
+                        </div>
                       </div>
-                      <div className="shrink-0 text-right text-xs">
-                        <p className="inline-flex items-center gap-1 font-medium text-emerald-700">
-                          <CheckCircle2 size={12} />
-                          {entry.metadata?.successCount ?? 0}
-                        </p>
-                        <p className="mt-1 inline-flex items-center gap-1 font-medium text-rose-600">
-                          <XCircle size={12} />
-                          {entry.metadata?.failureCount ?? 0}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                ))
+                    </button>
+                  );
+                })
               ) : (
                 <p className="text-sm text-slate-500">
                   No notification sends logged yet.
@@ -679,123 +941,77 @@ export default function NotificationsPage() {
 
           {lastResult ? (
             <div className="rounded-[28px] border border-white/70 bg-white/80 p-6 shadow-[0_24px_60px_rgba(74,44,31,0.08)]">
-              <h3 className="text-base font-semibold text-[var(--color-brown)]">
-                Last send debug
-              </h3>
-              <p className="mt-2 text-sm leading-6 text-slate-600">
-                {lastResult.hint || lastResult.message}
-              </p>
-              <dl className="mt-4 space-y-2 text-sm text-slate-600">
-                <div className="flex justify-between gap-4">
-                  <dt>Users targeted</dt>
-                  <dd className="font-medium text-slate-900">
-                    {lastResult.recipientUserCount ?? "—"}
-                  </dd>
-                </div>
-                <div className="flex justify-between gap-4">
-                  <dt>Devices targeted</dt>
-                  <dd className="font-medium text-slate-900">
-                    {lastResult.recipientTokenCount ?? "—"}
-                  </dd>
-                </div>
-                <div className="flex justify-between gap-4">
-                  <dt>Accepted by Firebase</dt>
-                  <dd className="font-medium text-emerald-700">
-                    {lastResult.successCount ?? 0}
-                  </dd>
-                </div>
-                <div className="flex justify-between gap-4">
-                  <dt>Rejected by Firebase</dt>
-                  <dd className="font-medium text-rose-700">
-                    {lastResult.failureCount ?? 0}
-                  </dd>
-                </div>
-                <div className="flex justify-between gap-4">
-                  <dt>Dead tokens removed</dt>
-                  <dd className="font-medium text-slate-900">
-                    {lastResult.invalidTokensRemoved ?? 0}
-                  </dd>
-                </div>
-              </dl>
-
-              {(lastResult.failureSummary || []).length ? (
-                <div className="mt-5">
-                  <h4 className="text-sm font-semibold text-slate-800">Why it failed</h4>
-                  <div className="mt-2 space-y-2">
-                    {lastResult.failureSummary.map((item) => (
-                      <div
-                        key={item.code}
-                        className="rounded-2xl border border-rose-100 bg-rose-50 px-4 py-3 text-sm text-rose-800"
-                      >
-                        <p className="font-semibold">
-                          {item.count} device{item.count === 1 ? "" : "s"} · {item.code}
-                        </p>
-                        <p className="mt-1 text-xs leading-5">{item.hint}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ) : null}
-
-              {(lastResult.usersWithoutTokens || []).length ? (
-                <div className="mt-5">
-                  <h4 className="text-sm font-semibold text-slate-800">
-                    Users with no token
-                  </h4>
-                  <ul className="mt-2 space-y-1 text-xs text-amber-700">
-                    {lastResult.usersWithoutTokens.map((user) => (
-                      <li key={user.id}>
-                        {user.name || user.email || user.id} must open the app and log in.
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ) : null}
-
-              {(lastResult.tokenResults || []).length ? (
-                <div className="mt-5">
-                  <h4 className="text-sm font-semibold text-slate-800">
-                    Device-by-device
-                  </h4>
-                  <div className="mt-2 max-h-72 space-y-2 overflow-y-auto">
-                    {lastResult.tokenResults.map((item, index) => (
-                      <div
-                        key={`${item.tokenPreview}-${index}`}
-                        className={`rounded-2xl border px-4 py-3 text-xs ${
-                          item.success
-                            ? "border-emerald-100 bg-emerald-50 text-emerald-800"
-                            : "border-rose-100 bg-rose-50 text-rose-800"
-                        }`}
-                      >
-                        <p className="font-semibold">
-                          {item.success ? "Accepted" : "Failed"} ·{" "}
-                          {item.userEmail || item.userName || "Unknown user"}
-                          {item.lastDeviceType ? ` · last device ${item.lastDeviceType}` : ""}
-                        </p>
-                        <p className="mt-1 font-mono text-[11px] opacity-80">
-                          token {item.tokenPreview}
-                        </p>
-                        <p className="mt-1 leading-5">
-                          {item.code ? `${item.code}: ` : ""}
-                          {item.hint}
-                        </p>
-                        {item.removed ? (
-                          <p className="mt-1 font-medium">Dead token was removed from the user.</p>
-                        ) : null}
-                      </div>
-                    ))}
-                  </div>
-                  {lastResult.tokenResultTruncated ? (
-                    <p className="mt-2 text-xs text-slate-500">
-                      Showing the first {lastResult.tokenResults.length} device results.
-                    </p>
-                  ) : null}
-                </div>
-              ) : null}
+              <SendDebugDetails
+                title="Last send debug"
+                status={lastResult.status}
+                summary={{
+                  title: lastResult.title || null,
+                  body: lastResult.body || null,
+                  type: lastResult.type || "custom",
+                  audience: lastResult.audience,
+                  successCount: lastResult.successCount,
+                  failureCount: lastResult.failureCount,
+                  recipientTokenCount: lastResult.recipientTokenCount,
+                  recipientUserCount: lastResult.recipientUserCount,
+                  invalidTokensRemoved: lastResult.invalidTokensRemoved,
+                  skipped: lastResult.skipped,
+                  hint: lastResult.hint || lastResult.message,
+                }}
+                failureSummary={lastResult.failureSummary || []}
+                usersWithoutTokens={lastResult.usersWithoutTokens || []}
+                tokenResults={lastResult.tokenResults || []}
+                tokenResultTruncated={Boolean(lastResult.tokenResultTruncated)}
+              />
             </div>
           ) : null}
         </div>
       </div>
+
+      {loadingSendDetail || sendDetail ? (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/40 p-4 sm:items-center">
+          <button
+            type="button"
+            aria-label="Close notification details"
+            className="absolute inset-0 cursor-default"
+            onClick={closeSendDetail}
+          />
+          <div className="relative z-10 max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-[28px] border border-white/70 bg-white p-6 shadow-[0_24px_60px_rgba(74,44,31,0.16)]">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+                Notification detail
+              </p>
+              <button
+                type="button"
+                onClick={closeSendDetail}
+                className="rounded-full border border-slate-200 p-2 text-slate-500 hover:bg-slate-50"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            {loadingSendDetail ? (
+              <p className="text-sm text-slate-500">Loading delivery details...</p>
+            ) : sendDetail ? (
+              <SendDebugDetails
+                title={sendDetail.summary?.title || "Push notification"}
+                subtitle={`${actionLabel(sendDetail.action)} · ${
+                  sendDetail.actorName || "System"
+                } · ${formatDateTime(sendDetail.createdAt)}`}
+                status={sendDetail.status}
+                summary={sendDetail.summary || {}}
+                failureSummary={sendDetail.failureSummary || []}
+                usersWithoutTokens={sendDetail.usersWithoutTokens || []}
+                tokenResults={sendDetail.tokenResults || []}
+                tokenResultTruncated={Boolean(
+                  sendDetail.metadata?.tokenResultTruncated,
+                )}
+                statuses={sendDetail.statuses || []}
+                userIds={sendDetail.userIds || []}
+              />
+            ) : null}
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
