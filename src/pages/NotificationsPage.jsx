@@ -495,7 +495,7 @@ export default function NotificationsPage() {
 
       const targetLabel =
         form.audience === "all"
-          ? "all users"
+          ? "everyone (including guests)"
           : form.audience === "status"
             ? `status: ${selectedStatuses.map(statusLabel).join(", ")}`
             : form.audience === "one"
@@ -530,7 +530,7 @@ export default function NotificationsPage() {
 
   const submitLabel =
     form.audience === "all"
-      ? "Send to all users"
+      ? "Send to everyone"
       : form.audience === "status"
         ? `Send to ${selectedStatuses.length || 0} status group(s)`
         : form.audience === "one"
@@ -598,7 +598,7 @@ export default function NotificationsPage() {
               </span>
               <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
                 {[
-                  { value: "all", label: "All users" },
+                  { value: "all", label: "Everyone (incl. guests)" },
                   { value: "one", label: "One user" },
                   { value: "many", label: "Selected users" },
                   { value: "status", label: "By status" },
@@ -617,6 +617,12 @@ export default function NotificationsPage() {
                   </button>
                 ))}
               </div>
+              {form.audience === "all" ? (
+                <p className="mt-2 text-xs text-slate-500">
+                  Uses an FCM topic so signed-in users and guests who opened the
+                  app and allowed notifications both receive it.
+                </p>
+              ) : null}
             </div>
 
             {form.audience === "status" ? (
