@@ -598,7 +598,7 @@ export default function NotificationsPage() {
               </span>
               <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
                 {[
-                  { value: "all", label: "Everyone (incl. guests)" },
+                  { value: "all", label: "Everyone" },
                   { value: "one", label: "One user" },
                   { value: "many", label: "Selected users" },
                   { value: "status", label: "By status" },
