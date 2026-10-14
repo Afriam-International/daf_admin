@@ -15,6 +15,7 @@ const permissionFields = [
   { key: "canManageFaqs", label: "Manage FAQs" },
   { key: "canManageInfos", label: "Manage Info" },
   { key: "canSendNotifications", label: "Send Notifications" },
+  { key: "canSendBulkMail", label: "Send Bulk Email" },
   { key: "canManageDeletionRequests", label: "Manage Deletion Requests" },
   { key: "canViewActivityLog", label: "View Activity Log" },
 ];

@@ -17,6 +17,7 @@ import SocialFeedPage from "./pages/SocialFeedPage";
 import FaqsPage from "./pages/FaqsPage";
 import InfosPage from "./pages/InfosPage";
 import NotificationsPage from "./pages/NotificationsPage";
+import BulkMailerPage from "./pages/BulkMailerPage";
 import AnalyticsPage from "./pages/AnalyticsPage";
 import PermissionsPage from "./pages/PermissionsPage";
 import ActivityLogsPage from "./pages/ActivityLogsPage";
@@ -60,6 +61,7 @@ export default function App() {
             <Route path="faqs" element={<FaqsPage />} />
             <Route path="infos" element={<InfosPage />} />
             <Route path="notifications" element={<NotificationsPage />} />
+            <Route path="bulk-mailer" element={<BulkMailerPage />} />
             <Route path="blog" element={<BlogPage />} />
             <Route path="permissions" element={<AccessRoute roles="superadmin"><PermissionsPage /></AccessRoute>} />
             <Route path="activity-logs" element={<AccessRoute roles="superadmin"><ActivityLogsPage /></AccessRoute>} />
