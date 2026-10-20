@@ -16,17 +16,20 @@ const statusOptions = [
   { label: "Disabled", value: "disabled" },
 ];
 
+const emptyForm = {
+  firstname: "",
+  lastname: "",
+  email: "",
+  contact: "",
+  password: "",
+  role: "admin",
+};
+
 export default function AdminsPage() {
   const { user } = useAuth();
   const [admins, setAdmins] = useState([]);
   const [permissionsMap, setPermissionsMap] = useState({});
-  const [form, setForm] = useState({
-    firstname: "",
-    lastname: "",
-    email: "",
-    contact: "",
-    password: "",
-  });
+  const [form, setForm] = useState(emptyForm);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -45,7 +48,7 @@ export default function AdminsPage() {
     setLoading(true);
     try {
       const [adminsResponse, permissionsResponse] = await Promise.all([
-        userService.getAllUsers({ page: 1, limit: 100, role: "admin" }),
+        userService.getAdmins({ page: 1, limit: 100 }),
         userService.getPermissions(),
       ]);
       const adminList = adminsResponse.data.data || [];
@@ -74,7 +77,8 @@ export default function AdminsPage() {
     return admins.filter((admin) => {
       const name = `${admin.firstname || ""} ${admin.lastname || ""}`.toLowerCase();
       const email = admin.email?.toLowerCase() || "";
-      return name.includes(query) || email.includes(query);
+      const role = admin.role?.toLowerCase() || "";
+      return name.includes(query) || email.includes(query) || role.includes(query);
     });
   }, [admins, deferredSearch]);
 
@@ -84,9 +88,17 @@ export default function AdminsPage() {
     setSuccess("");
 
     try {
-      await userService.createAdmin(form);
-      setForm({ firstname: "", lastname: "", email: "", contact: "", password: "" });
-      setSuccess("Admin created successfully.");
+      const response = await userService.createAdmin({
+        ...form,
+        role: form.role === "superadmin" ? "superadmin" : "admin",
+      });
+      setForm(emptyForm);
+      setSuccess(
+        response.data?.message ||
+          (form.role === "superadmin"
+            ? "Superadmin added successfully."
+            : "Admin created successfully."),
+      );
       await loadAdmins();
     } catch (err) {
       setError(err.response?.data?.message || "Unable to create admin");
@@ -116,7 +128,7 @@ export default function AdminsPage() {
     setSuccess("");
 
     try {
-      await Promise.all([
+      const updates = [
         userService.updateUser(selectedAdmin.id, {
           firstname: payload.firstname,
           lastname: payload.lastname,
@@ -124,8 +136,16 @@ export default function AdminsPage() {
           contact: payload.contact,
           status: payload.status,
         }),
-        userService.updatePermissions(selectedAdmin.id, payload.permissions),
-      ]);
+      ];
+
+      // Superadmins don't use granular permission rows.
+      if (selectedAdmin.role !== "superadmin") {
+        updates.push(
+          userService.updatePermissions(selectedAdmin.id, payload.permissions),
+        );
+      }
+
+      await Promise.all(updates);
 
       setSelectedAdmin(null);
       setSuccess("Admin updated successfully.");
@@ -148,22 +168,67 @@ export default function AdminsPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader eyebrow="Admins" title="Admin accounts" description="Only superadmin can add, remove, view, and edit admin accounts and their permissions." />
+      <PageHeader
+        eyebrow="Admins"
+        title="Admin accounts"
+        description="Only superadmin can add, remove, view, and edit admin/superadmin accounts. Existing app users can be promoted by email."
+      />
 
       <section className="rounded-[30px] border border-white/70 bg-white/90 p-6 shadow-[0_24px_60px_rgba(74,44,31,0.08)]">
-        <form className="grid gap-4 lg:grid-cols-5" onSubmit={handleCreateAdmin}>
-          <input value={form.firstname} onChange={(e) => setForm((c) => ({ ...c, firstname: e.target.value }))} placeholder="First name" className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none" />
-          <input value={form.lastname} onChange={(e) => setForm((c) => ({ ...c, lastname: e.target.value }))} placeholder="Last name" className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none" />
-          <input value={form.email} onChange={(e) => setForm((c) => ({ ...c, email: e.target.value }))} placeholder="Email address" className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none" />
-          <input value={form.contact} onChange={(e) => setForm((c) => ({ ...c, contact: e.target.value }))} placeholder="Contact" className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none" />
+        <form className="grid gap-4 lg:grid-cols-6" onSubmit={handleCreateAdmin}>
+          <input
+            value={form.firstname}
+            onChange={(e) => setForm((c) => ({ ...c, firstname: e.target.value }))}
+            placeholder="First name"
+            className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none"
+          />
+          <input
+            value={form.lastname}
+            onChange={(e) => setForm((c) => ({ ...c, lastname: e.target.value }))}
+            placeholder="Last name"
+            className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none"
+          />
+          <input
+            value={form.email}
+            onChange={(e) => setForm((c) => ({ ...c, email: e.target.value }))}
+            placeholder="Email address"
+            required
+            className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none"
+          />
+          <input
+            value={form.contact}
+            onChange={(e) => setForm((c) => ({ ...c, contact: e.target.value }))}
+            placeholder="Contact"
+            className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none"
+          />
+          <select
+            value={form.role}
+            onChange={(e) => setForm((c) => ({ ...c, role: e.target.value }))}
+            className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none"
+          >
+            <option value="admin">Admin</option>
+            <option value="superadmin">Superadmin</option>
+          </select>
           <div className="flex gap-3">
-            <input value={form.password} onChange={(e) => setForm((c) => ({ ...c, password: e.target.value }))} placeholder="Temporary password" className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none" />
-            <button type="submit" className="inline-flex items-center gap-2 rounded-2xl bg-[var(--color-accent)] px-4 py-3 text-sm font-semibold text-white">
+            <input
+              value={form.password}
+              onChange={(e) => setForm((c) => ({ ...c, password: e.target.value }))}
+              placeholder="Temp password (new users)"
+              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none"
+            />
+            <button
+              type="submit"
+              className="inline-flex items-center gap-2 rounded-2xl bg-[var(--color-accent)] px-4 py-3 text-sm font-semibold text-white"
+            >
               <Plus className="h-4 w-4" />
               Add
             </button>
           </div>
         </form>
+        <p className="mt-3 text-xs text-slate-500">
+          If the email already signed up in the app, they will be promoted to the selected role.
+          Password is only required when creating a brand-new account.
+        </p>
       </section>
 
       <section className="rounded-[30px] border border-white/70 bg-white/90 p-6 shadow-[0_24px_60px_rgba(74,44,31,0.08)]">
@@ -174,15 +239,23 @@ export default function AdminsPage() {
             <input
               value={search}
               onChange={(event) => setSearch(event.target.value)}
-              placeholder="Search by admin name or email"
+              placeholder="Search by name, email, or role"
               className="w-full bg-transparent text-sm outline-none"
             />
           </div>
         </label>
       </section>
 
-      {error ? <div className="rounded-[28px] border border-rose-200 bg-rose-50 px-5 py-4 text-sm text-rose-700">{error}</div> : null}
-      {success ? <div className="rounded-[28px] border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm text-emerald-700">{success}</div> : null}
+      {error ? (
+        <div className="rounded-[28px] border border-rose-200 bg-rose-50 px-5 py-4 text-sm text-rose-700">
+          {error}
+        </div>
+      ) : null}
+      {success ? (
+        <div className="rounded-[28px] border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm text-emerald-700">
+          {success}
+        </div>
+      ) : null}
 
       {loading ? (
         <PageLoader label="Loading admins..." />
@@ -196,6 +269,7 @@ export default function AdminsPage() {
               <thead className="bg-slate-50 text-left text-xs uppercase tracking-[0.2em] text-slate-500">
                 <tr>
                   <th className="px-6 py-4">Admin</th>
+                  <th className="px-6 py-4">Role</th>
                   <th className="px-6 py-4">Status</th>
                   <th className="px-6 py-4">Permissions</th>
                   <th className="px-6 py-4">Created</th>
@@ -205,7 +279,12 @@ export default function AdminsPage() {
               <tbody>
                 {filteredAdmins.length ? (
                   filteredAdmins.map((admin) => {
-                    const permissionCount = Object.entries(permissionsMap[admin.id] || {}).filter(([key, value]) => key.startsWith("can") && value).length;
+                    const isSuper = admin.role === "superadmin";
+                    const permissionCount = isSuper
+                      ? "All"
+                      : Object.entries(permissionsMap[admin.id] || {}).filter(
+                          ([key, value]) => key.startsWith("can") && value,
+                        ).length;
                     return (
                       <tr key={admin.id} className="border-t border-slate-100">
                         <td className="px-6 py-4">
@@ -214,28 +293,65 @@ export default function AdminsPage() {
                               <Shield className="h-4 w-4" />
                             </div>
                             <div>
-                              <p className="font-medium text-slate-900">{`${admin.firstname || ""} ${admin.lastname || ""}`.trim()}</p>
+                              <p className="font-medium text-slate-900">
+                                {`${admin.firstname || ""} ${admin.lastname || ""}`.trim()}
+                              </p>
                               <p className="text-sm text-slate-500">{admin.email}</p>
                             </div>
                           </div>
                         </td>
-                        <td className="px-6 py-4"><span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold capitalize text-slate-700">{admin.status}</span></td>
-                        <td className="px-6 py-4 text-sm text-slate-600">{permissionCount} enabled</td>
-                        <td className="px-6 py-4 text-sm text-slate-500">{formatDateTime(admin.createdAt)}</td>
+                        <td className="px-6 py-4">
+                          <span
+                            className={`rounded-full px-3 py-1 text-xs font-semibold capitalize ${
+                              isSuper
+                                ? "bg-[var(--color-accent)]/10 text-[var(--color-accent)]"
+                                : "bg-slate-100 text-slate-700"
+                            }`}
+                          >
+                            {admin.role || "admin"}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold capitalize text-slate-700">
+                            {admin.status}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-sm text-slate-600">
+                          {permissionCount === "All"
+                            ? "All enabled"
+                            : `${permissionCount} enabled`}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-slate-500">
+                          {formatDateTime(admin.createdAt)}
+                        </td>
                         <td className="px-6 py-4">
                           <div className="flex flex-wrap gap-2">
-                            <button type="button" onClick={() => openViewModal(admin)} className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700">
+                            <button
+                              type="button"
+                              onClick={() => openViewModal(admin)}
+                              className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700"
+                            >
                               <Eye className="h-4 w-4" />
                               View
                             </button>
-                            <button type="button" onClick={() => setSelectedAdmin(admin)} className="inline-flex items-center gap-2 rounded-2xl border border-[var(--color-accent)]/20 px-4 py-2 text-sm font-medium text-[var(--color-accent)]">
+                            <button
+                              type="button"
+                              onClick={() => setSelectedAdmin(admin)}
+                              className="inline-flex items-center gap-2 rounded-2xl border border-[var(--color-accent)]/20 px-4 py-2 text-sm font-medium text-[var(--color-accent)]"
+                            >
                               <Pencil className="h-4 w-4" />
                               Edit
                             </button>
-                            <button type="button" onClick={() => setTargetAdmin(admin)} className="inline-flex items-center gap-2 rounded-2xl border border-rose-200 px-4 py-2 text-sm font-medium text-rose-700">
-                              <Trash2 className="h-4 w-4" />
-                              Remove
-                            </button>
+                            {admin.id !== user?.id ? (
+                              <button
+                                type="button"
+                                onClick={() => setTargetAdmin(admin)}
+                                className="inline-flex items-center gap-2 rounded-2xl border border-rose-200 px-4 py-2 text-sm font-medium text-rose-700"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                                Remove
+                              </button>
+                            ) : null}
                           </div>
                         </td>
                       </tr>
@@ -243,7 +359,9 @@ export default function AdminsPage() {
                   })
                 ) : (
                   <tr>
-                    <td colSpan="5" className="px-6 py-10 text-center text-sm text-slate-500">No admins found for this search.</td>
+                    <td colSpan="6" className="px-6 py-10 text-center text-sm text-slate-500">
+                      No admins found for this search.
+                    </td>
                   </tr>
                 )}
               </tbody>
@@ -252,9 +370,38 @@ export default function AdminsPage() {
         </section>
       )}
 
-      <ConfirmModal open={Boolean(targetAdmin)} title="Remove admin" message={targetAdmin ? `Remove ${targetAdmin.email} from the admin team?` : ""} confirmLabel="Remove Admin" tone="danger" busy={busy} onClose={() => setTargetAdmin(null)} onConfirm={handleDeleteAdmin} />
-      <UserEditModal open={Boolean(selectedAdmin)} title="Edit admin" user={selectedAdmin} includePermissions permissions={selectedAdmin ? permissionsMap[selectedAdmin.id] : null} busy={busy} statusOptions={statusOptions} onClose={() => setSelectedAdmin(null)} onSubmit={handleEditAdmin} />
-      <UserViewModal open={Boolean(viewAdmin)} title="Admin information" user={viewAdmin} permissions={viewAdmin ? permissionsMap[viewAdmin.id] : null} onClose={() => setViewAdmin(null)} />
+      <ConfirmModal
+        open={Boolean(targetAdmin)}
+        title="Remove admin"
+        message={
+          targetAdmin
+            ? `Remove ${targetAdmin.email} from the admin team?`
+            : ""
+        }
+        confirmLabel="Remove Admin"
+        tone="danger"
+        busy={busy}
+        onClose={() => setTargetAdmin(null)}
+        onConfirm={handleDeleteAdmin}
+      />
+      <UserEditModal
+        open={Boolean(selectedAdmin)}
+        title="Edit admin"
+        user={selectedAdmin}
+        includePermissions={selectedAdmin?.role !== "superadmin"}
+        permissions={selectedAdmin ? permissionsMap[selectedAdmin.id] : null}
+        busy={busy}
+        statusOptions={statusOptions}
+        onClose={() => setSelectedAdmin(null)}
+        onSubmit={handleEditAdmin}
+      />
+      <UserViewModal
+        open={Boolean(viewAdmin)}
+        title="Admin information"
+        user={viewAdmin}
+        permissions={viewAdmin ? permissionsMap[viewAdmin.id] : null}
+        onClose={() => setViewAdmin(null)}
+      />
     </div>
   );
 }
