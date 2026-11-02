@@ -6,8 +6,10 @@ import {
   Send,
   Smartphone,
   Users,
+  UserRound,
   X,
   XCircle,
+  Zap,
 } from "lucide-react";
 import PageHeader from "../components/PageHeader";
 import { notificationService } from "../services/notificationService";
@@ -40,6 +42,32 @@ const actionLabel = (action = "") =>
   String(action)
     .replace(/^notification\./, "")
     .replace(/_/g, " ");
+
+const sourceLabel = (source = "manual") =>
+  source === "automatic" ? "Automatic" : "Manual";
+
+const BreakdownList = ({ title, items = [], empty = "No data yet." }) => (
+  <div className="rounded-[28px] border border-white/70 bg-white/80 p-6 shadow-[0_24px_60px_rgba(74,44,31,0.08)]">
+    <h3 className="text-base font-semibold text-[var(--color-brown)]">{title}</h3>
+    <div className="mt-4 space-y-2">
+      {items.length ? (
+        items.map((item) => (
+          <div
+            key={item.label}
+            className="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3 text-sm"
+          >
+            <span className="capitalize text-slate-600">
+              {String(item.label).replace(/_/g, " ")}
+            </span>
+            <span className="font-semibold text-slate-900">{item.value}</span>
+          </div>
+        ))
+      ) : (
+        <p className="text-sm text-slate-500">{empty}</p>
+      )}
+    </div>
+  </div>
+);
 
 const sendStatusMeta = (status) => {
   switch (status) {
@@ -114,8 +142,15 @@ function SendDebugDetails({
             <p className="mt-1 text-sm leading-6 text-slate-600">{summary.body}</p>
           ) : null}
           <p className="mt-2 text-xs text-slate-500">
-            {[summary.type, summary.audience].filter(Boolean).join(" · ") ||
-              "custom"}
+            {[
+              sourceLabel(summary.source),
+              summary.trigger,
+              summary.type,
+              summary.audience,
+              summary.deliveryMode,
+            ]
+              .filter(Boolean)
+              .join(" · ") || "custom"}
             {statuses.length
               ? ` · status: ${statuses.map(statusLabel).join(", ")}`
               : ""}
@@ -130,27 +165,59 @@ function SendDebugDetails({
 
       <dl className="mt-4 space-y-2 text-sm text-slate-600">
         <div className="flex justify-between gap-4">
-          <dt>Users targeted</dt>
+          <dt>Signed-in users targeted</dt>
           <dd className="font-medium text-slate-900">
-            {summary.recipientUserCount ?? "—"}
+            {summary.recipientUserCount ??
+              summary.signedInAudience?.signedInUsersWithTokens ??
+              "—"}
           </dd>
         </div>
         <div className="flex justify-between gap-4">
-          <dt>Devices targeted</dt>
+          <dt>Signed-in devices targeted</dt>
           <dd className="font-medium text-slate-900">
-            {summary.recipientTokenCount ?? "—"}
+            {summary.recipientTokenCount ??
+              summary.signedInAudience?.signedInTokens ??
+              "—"}
+          </dd>
+        </div>
+        <div className="flex justify-between gap-4">
+          <dt>Guests included</dt>
+          <dd className="font-medium text-slate-900">
+            {summary.includesGuests
+              ? summary.guestCountKnown
+                ? "Yes"
+                : "Yes (count unknown — topic)"
+              : "No"}
           </dd>
         </div>
         <div className="flex justify-between gap-4">
           <dt>Accepted by Firebase</dt>
           <dd className="font-medium text-emerald-700">
-            {summary.successCount ?? 0}
+            {summary.deliveryMode === "topic"
+              ? summary.successCount
+                ? "Topic accepted"
+                : "0"
+              : (summary.successCount ?? 0)}
           </dd>
         </div>
         <div className="flex justify-between gap-4">
           <dt>Rejected by Firebase</dt>
           <dd className="font-medium text-rose-700">
             {summary.failureCount ?? 0}
+          </dd>
+        </div>
+        <div className="flex justify-between gap-4">
+          <dt>iOS accepted / failed</dt>
+          <dd className="font-medium text-slate-900">
+            {summary.platformCounts?.accepted?.ios ?? 0} /{" "}
+            {summary.platformCounts?.failed?.ios ?? 0}
+          </dd>
+        </div>
+        <div className="flex justify-between gap-4">
+          <dt>Android accepted / failed</dt>
+          <dd className="font-medium text-slate-900">
+            {summary.platformCounts?.accepted?.android ?? 0} /{" "}
+            {summary.platformCounts?.failed?.android ?? 0}
           </dd>
         </div>
         <div className="flex justify-between gap-4">
@@ -391,11 +458,21 @@ export default function NotificationsPage() {
     appUsers: 0,
     pushReadyUsers: 0,
     usersWithoutPush: 0,
+    registeredTokenCount: 0,
     coveragePercent: 0,
     sendsToday: 0,
     sendsInRange: 0,
+    manualSends: 0,
+    automaticSends: 0,
+    tokenSends: 0,
+    topicSends: 0,
+    topicAccepted: 0,
+    topicFailed: 0,
     deliveredDevices: 0,
     failedDevices: 0,
+    targetedSignedInUsers: 0,
+    targetedSignedInTokens: 0,
+    sendsIncludingGuests: 0,
   };
 
   const toggleUser = (user) => {
@@ -542,33 +619,74 @@ export default function NotificationsPage() {
       <PageHeader
         eyebrow="Engagement"
         title="Push notifications"
-        description="Compose pushes, target by user or status, and track delivery coverage from one place."
+        description="Compose pushes and track manual plus automatic delivery: signed-in users, guests, iOS, and Android."
       />
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <StatCard
           icon={Users}
-          label="App users"
+          label="Signed-in users"
           value={loadingAnalytics ? "—" : overview.appUsers}
-          hint={`${overview.coveragePercent}% push coverage`}
+          hint={`${overview.pushReadyUsers} with tokens · ${overview.coveragePercent}% coverage`}
         />
         <StatCard
           icon={Smartphone}
-          label="Push-ready devices"
-          value={loadingAnalytics ? "—" : overview.pushReadyUsers}
+          label="Registered devices"
+          value={loadingAnalytics ? "—" : overview.registeredTokenCount}
           hint={`${overview.usersWithoutPush} users without a token`}
         />
         <StatCard
           icon={Send}
           label="Sends (7 days)"
           value={loadingAnalytics ? "—" : overview.sendsInRange}
-          hint={`${overview.sendsToday} sent today`}
+          hint={`${overview.manualSends} manual · ${overview.automaticSends} automatic · ${overview.sendsToday} today`}
         />
         <StatCard
           icon={CheckCircle2}
-          label="Devices delivered"
+          label="Devices accepted"
           value={loadingAnalytics ? "—" : overview.deliveredDevices}
-          hint={`${overview.failedDevices} failed in range`}
+          hint={`${overview.failedDevices} rejected · ${overview.topicAccepted} topic accepted`}
+        />
+        <StatCard
+          icon={UserRound}
+          label="Signed-in targets"
+          value={loadingAnalytics ? "—" : overview.targetedSignedInTokens}
+          hint={`${overview.targetedSignedInUsers} user targets in range`}
+        />
+        <StatCard
+          icon={Zap}
+          label="Guest-inclusive sends"
+          value={loadingAnalytics ? "—" : overview.sendsIncludingGuests}
+          hint="Topic broadcasts reach guests; exact guest count is unknown"
+        />
+        <StatCard
+          icon={Smartphone}
+          label="iOS accepted"
+          value={
+            loadingAnalytics
+              ? "—"
+              : (analytics?.acceptedByPlatform || []).find((i) => i.label === "ios")
+                  ?.value || 0
+          }
+          hint={`${
+            (analytics?.failedByPlatform || []).find((i) => i.label === "ios")
+              ?.value || 0
+          } iOS rejected`}
+        />
+        <StatCard
+          icon={Smartphone}
+          label="Android accepted"
+          value={
+            loadingAnalytics
+              ? "—"
+              : (analytics?.acceptedByPlatform || []).find(
+                  (i) => i.label === "android",
+                )?.value || 0
+          }
+          hint={`${
+            (analytics?.failedByPlatform || []).find((i) => i.label === "android")
+              ?.value || 0
+          } Android rejected`}
         />
       </div>
 
@@ -841,8 +959,8 @@ export default function NotificationsPage() {
                   Recent sends
                 </h3>
                 <p className="mt-1 text-sm text-slate-500">
-                  Latest admin push activity from the last week. Click a row for
-                  full delivery details.
+                  Manual and automatic pushes. Click a row for audience and
+                  platform delivery details.
                 </p>
               </div>
               <button
@@ -890,12 +1008,37 @@ export default function NotificationsPage() {
                             >
                               {statusMeta.label}
                             </span>
+                            <span
+                              className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-semibold ${
+                                entry.metadata?.source === "automatic"
+                                  ? "border-violet-100 bg-violet-50 text-violet-800"
+                                  : "border-sky-100 bg-sky-50 text-sky-800"
+                              }`}
+                            >
+                              {sourceLabel(entry.metadata?.source)}
+                            </span>
+                            {entry.metadata?.type ? (
+                              <span className="inline-flex rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-semibold capitalize text-slate-600">
+                                {entry.metadata.type}
+                              </span>
+                            ) : null}
                           </div>
                           <p className="mt-1 text-xs text-slate-500">
                             {actionLabel(entry.action)} ·{" "}
                             {entry.actorName || "System"} ·{" "}
-                            {formatDateTime(entry.createdAt)}
+                            {entry.metadata?.deliveryMode === "topic"
+                              ? "topic · guests+users"
+                              : "tokens · signed-in"}{" "}
+                            · {formatDateTime(entry.createdAt)}
                           </p>
+                          {entry.metadata?.platformCounts ? (
+                            <p className="mt-1 text-xs text-slate-500">
+                              iOS {entry.metadata.platformCounts.accepted?.ios || 0}/
+                              {entry.metadata.platformCounts.failed?.ios || 0} · Android{" "}
+                              {entry.metadata.platformCounts.accepted?.android || 0}/
+                              {entry.metadata.platformCounts.failed?.android || 0}
+                            </p>
+                          ) : null}
                           {entry.metadata?.hint ? (
                             <p className="mt-2 line-clamp-2 text-xs leading-5 text-slate-600">
                               {entry.metadata.hint}
@@ -927,30 +1070,31 @@ export default function NotificationsPage() {
             </div>
           </div>
 
-          <div className="rounded-[28px] border border-white/70 bg-white/80 p-6 shadow-[0_24px_60px_rgba(74,44,31,0.08)]">
-            <h3 className="text-base font-semibold text-[var(--color-brown)]">
-              Audience mix (7 days)
-            </h3>
-            <div className="mt-4 space-y-2">
-              {(analytics?.audienceBreakdown || []).length ? (
-                analytics.audienceBreakdown.map((item) => (
-                  <div
-                    key={item.label}
-                    className="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3 text-sm"
-                  >
-                    <span className="capitalize text-slate-600">
-                      {String(item.label).replace(/_/g, " ")}
-                    </span>
-                    <span className="font-semibold text-slate-900">
-                      {item.value}
-                    </span>
-                  </div>
-                ))
-              ) : (
-                <p className="text-sm text-slate-500">No audience data yet.</p>
-              )}
-            </div>
-          </div>
+          <BreakdownList
+            title="Manual vs automatic (7 days)"
+            items={analytics?.sourceBreakdown || []}
+            empty="No send source data yet."
+          />
+          <BreakdownList
+            title="Audience mix (7 days)"
+            items={analytics?.audienceBreakdown || []}
+            empty="No audience data yet."
+          />
+          <BreakdownList
+            title="Registered devices by platform"
+            items={analytics?.deviceBreakdown || []}
+            empty="No registered device data yet."
+          />
+          <BreakdownList
+            title="Accepted by platform (token sends)"
+            items={analytics?.acceptedByPlatform || []}
+            empty="No accepted device data yet."
+          />
+          <BreakdownList
+            title="Push type mix (7 days)"
+            items={analytics?.typeBreakdown || []}
+            empty="No type data yet."
+          />
 
           {lastResult ? (
             <div className="rounded-[28px] border border-white/70 bg-white/80 p-6 shadow-[0_24px_60px_rgba(74,44,31,0.08)]">
@@ -962,6 +1106,12 @@ export default function NotificationsPage() {
                   body: lastResult.body || null,
                   type: lastResult.type || "custom",
                   audience: lastResult.audience,
+                  source: lastResult.source || "manual",
+                  deliveryMode: lastResult.deliveryMode || "tokens",
+                  includesGuests: Boolean(lastResult.includesGuests),
+                  guestCountKnown: false,
+                  signedInAudience: lastResult.signedInAudience || null,
+                  platformCounts: lastResult.platformCounts || null,
                   successCount: lastResult.successCount,
                   failureCount: lastResult.failureCount,
                   recipientTokenCount: lastResult.recipientTokenCount,
