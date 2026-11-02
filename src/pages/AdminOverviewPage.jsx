@@ -1,9 +1,15 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { BookOpenText, Images, ShieldCheck, Trash2, Users, Wallet } from "lucide-react";
+import { BookOpenText, Images, ShieldCheck, Users, Wallet } from "lucide-react";
 import PageHeader from "../components/PageHeader";
 import PageLoader from "../components/PageLoader";
 import StatCard from "../components/StatCard";
+import {
+  BreakdownBarChart,
+  ChartCard,
+  SharePieChart,
+  TrendAreaChart,
+} from "../components/MetricCharts";
 import { analyticsService } from "../services/analyticsService";
 import { blogService } from "../services/blogService";
 import { userService } from "../services/userService";
@@ -119,6 +125,18 @@ export default function AdminOverviewPage() {
             <StatCard title="Total raised" value={formatCurrency(superStats.totalRaised)} icon={Wallet} trend={superStats.revenueTrend} helper={`${superStats.activeCampaigns || 0} active campaigns`} accent="sand" />
           </div>
 
+          <div className="grid gap-6 xl:grid-cols-3">
+            <ChartCard title="New users (6 months)" subtitle="Monthly signups">
+              <TrendAreaChart data={superStats.monthlyUsers || []} />
+            </ChartCard>
+            <ChartCard title="Users by status" subtitle="Current account mix">
+              <SharePieChart data={superStats.statusBreakdown || []} />
+            </ChartCard>
+            <ChartCard title="Users by role" subtitle="Role distribution">
+              <BreakdownBarChart data={superStats.roleBreakdown || []} />
+            </ChartCard>
+          </div>
+
           <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
             <section className="rounded-[30px] border border-white/70 bg-white/90 p-6 shadow-[0_24px_60px_rgba(74,44,31,0.08)]">
               <div>
@@ -168,6 +186,30 @@ export default function AdminOverviewPage() {
             <StatCard title="FAQs" value={formatCompactNumber(adminStats.faqCount)} icon={BsQuestion} helper="Accounts awaiting review" accent="accent" />
             <StatCard title="Gallery images" value={formatCompactNumber(adminStats.galleryCount)} icon={Images} helper="Images available" accent="brown" />
             <StatCard title="Social feed posts" value={formatCompactNumber(adminStats.feedCount)} icon={BookOpenText} helper="Posts ready for the mobile app" accent="sand" />
+          </div>
+
+          <div className="grid gap-6 xl:grid-cols-2">
+            <ChartCard title="Content inventory" subtitle="What you manage today">
+              <BreakdownBarChart
+                data={[
+                  { label: "users", value: adminStats.userCount },
+                  { label: "faqs", value: adminStats.faqCount },
+                  { label: "gallery", value: adminStats.galleryCount },
+                  { label: "feed", value: adminStats.feedCount },
+                  { label: "deletions", value: adminStats.deletionCount },
+                ]}
+              />
+            </ChartCard>
+            <ChartCard title="Share of managed items" subtitle="Relative mix">
+              <SharePieChart
+                data={[
+                  { label: "users", value: adminStats.userCount },
+                  { label: "faqs", value: adminStats.faqCount },
+                  { label: "gallery", value: adminStats.galleryCount },
+                  { label: "feed", value: adminStats.feedCount },
+                ].filter((item) => item.value > 0)}
+              />
+            </ChartCard>
           </div>
 
           <div className="grid gap-6 xl:grid-cols-[0.92fr_1.08fr]">

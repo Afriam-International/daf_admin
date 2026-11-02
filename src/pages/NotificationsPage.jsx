@@ -12,6 +12,14 @@ import {
   Zap,
 } from "lucide-react";
 import PageHeader from "../components/PageHeader";
+import ModalFrame from "../components/ModalFrame";
+import SendProgressPanel from "../components/SendProgressPanel";
+import {
+  BreakdownBarChart,
+  ChartCard,
+  SharePieChart,
+  TrendAreaChart,
+} from "../components/MetricCharts";
 import { notificationService } from "../services/notificationService";
 import { formatDateTime } from "../services/formatters";
 import { toast } from "../utils/toast";
@@ -22,12 +30,19 @@ const STATUS_OPTIONS = [
   { value: "deletion_requested", label: "Deletion requested" },
 ];
 
-
 const emptyForm = {
   title: "",
   body: "",
   type: "custom",
   audience: "all",
+};
+
+const emptySendProgress = {
+  total: 0,
+  sent: 0,
+  failed: 0,
+  pending: 0,
+  done: false,
 };
 
 const displayName = (user) => {
@@ -45,29 +60,6 @@ const actionLabel = (action = "") =>
 
 const sourceLabel = (source = "manual") =>
   source === "automatic" ? "Automatic" : "Manual";
-
-const BreakdownList = ({ title, items = [], empty = "No data yet." }) => (
-  <div className="rounded-[28px] border border-white/70 bg-white/80 p-6 shadow-[0_24px_60px_rgba(74,44,31,0.08)]">
-    <h3 className="text-base font-semibold text-[var(--color-brown)]">{title}</h3>
-    <div className="mt-4 space-y-2">
-      {items.length ? (
-        items.map((item) => (
-          <div
-            key={item.label}
-            className="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3 text-sm"
-          >
-            <span className="capitalize text-slate-600">
-              {String(item.label).replace(/_/g, " ")}
-            </span>
-            <span className="font-semibold text-slate-900">{item.value}</span>
-          </div>
-        ))
-      ) : (
-        <p className="text-sm text-slate-500">{empty}</p>
-      )}
-    </div>
-  </div>
-);
 
 const sendStatusMeta = (status) => {
   switch (status) {
@@ -243,15 +235,14 @@ function SendDebugDetails({
                 key={item.code}
                 className="rounded-2xl border border-rose-100 bg-rose-50 px-4 py-3 text-sm text-rose-800"
               >
-                        <p className="font-semibold">
-                          {item.count} device{item.count === 1 ? "" : "s"} ·{" "}
-                          {item.code}
-                          {item.deviceTypes
-                            ? ` · ${Object.entries(item.deviceTypes)
-                                .map(([platform, count]) => `${count} ${platform}`)
-                                .join(", ")}`
-                            : ""}
-                        </p>
+                <p className="font-semibold">
+                  {item.count} device{item.count === 1 ? "" : "s"} · {item.code}
+                  {item.deviceTypes
+                    ? ` · ${Object.entries(item.deviceTypes)
+                        .map(([platform, count]) => `${count} ${platform}`)
+                        .join(", ")}`
+                    : ""}
+                </p>
                 <p className="mt-1 text-xs leading-5">{item.hint}</p>
               </div>
             ))}
@@ -267,8 +258,7 @@ function SendDebugDetails({
           <ul className="mt-2 space-y-1 text-xs text-amber-700">
             {usersWithoutTokens.map((user) => (
               <li key={user.id}>
-                {user.name || user.email || user.id} must open the app and log
-                in.
+                {user.name || user.email || user.id} must open the app and log in.
               </li>
             ))}
           </ul>
@@ -277,9 +267,7 @@ function SendDebugDetails({
 
       {tokenResults.length ? (
         <div className="mt-5">
-          <h4 className="text-sm font-semibold text-slate-800">
-            Device-by-device
-          </h4>
+          <h4 className="text-sm font-semibold text-slate-800">Device-by-device</h4>
           <div className="mt-2 max-h-72 space-y-2 overflow-y-auto">
             {tokenResults.map((item, index) => (
               <div
@@ -346,9 +334,11 @@ function StatCard({ icon: Icon, label, value, hint }) {
 }
 
 export default function NotificationsPage() {
+  const [composeOpen, setComposeOpen] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [busy, setBusy] = useState(false);
   const [lastResult, setLastResult] = useState(null);
+  const [sendProgress, setSendProgress] = useState(emptySendProgress);
 
   const [search, setSearch] = useState("");
   const deferredSearch = useDeferredValue(search);
@@ -390,6 +380,18 @@ export default function NotificationsPage() {
     setLoadingSendDetail(false);
   };
 
+  const closeComposeModal = () => {
+    if (busy) return;
+    setComposeOpen(false);
+    setForm(emptyForm);
+    setSelectedUsers([]);
+    setSearch("");
+    setStatusFilter("");
+    setSelectedStatuses(["active"]);
+    setLastResult(null);
+    setSendProgress(emptySendProgress);
+  };
+
   const needsUserPicker = form.audience === "one" || form.audience === "many";
 
   const loadAnalytics = async () => {
@@ -411,7 +413,7 @@ export default function NotificationsPage() {
   }, []);
 
   useEffect(() => {
-    if (!needsUserPicker) return;
+    if (!composeOpen || !needsUserPicker) return;
 
     let cancelled = false;
     const loadRecipients = async () => {
@@ -447,7 +449,7 @@ export default function NotificationsPage() {
     return () => {
       cancelled = true;
     };
-  }, [needsUserPicker, deferredSearch, statusFilter]);
+  }, [composeOpen, needsUserPicker, deferredSearch, statusFilter]);
 
   const selectedIds = useMemo(
     () => new Set(selectedUsers.map((user) => user.id)),
@@ -473,6 +475,31 @@ export default function NotificationsPage() {
     targetedSignedInUsers: 0,
     targetedSignedInTokens: 0,
     sendsIncludingGuests: 0,
+  };
+
+  const sendTrend = useMemo(() => {
+    const byDay = {};
+    for (const entry of analytics?.recent || []) {
+      const day = entry.createdAt ? String(entry.createdAt).slice(0, 10) : "";
+      if (!day) continue;
+      byDay[day] = (byDay[day] || 0) + 1;
+    }
+    return Object.entries(byDay)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([label, value]) => ({ label, value }));
+  }, [analytics?.recent]);
+
+  const estimateSendTargets = () => {
+    if (form.audience === "all") {
+      return overview.pushReadyUsers || 0;
+    }
+    if (needsUserPicker) {
+      return selectedUsers.length;
+    }
+    if (form.audience === "status") {
+      return recipientTotal || overview.pushReadyUsers || overview.appUsers || 0;
+    }
+    return 0;
   };
 
   const toggleUser = (user) => {
@@ -538,6 +565,15 @@ export default function NotificationsPage() {
       return;
     }
 
+    const estimated = Math.max(estimateSendTargets(), 1);
+    setSendProgress({
+      total: estimated,
+      sent: 0,
+      failed: 0,
+      pending: estimated,
+      done: false,
+    });
+
     setBusy(true);
     try {
       const payload = {
@@ -558,6 +594,9 @@ export default function NotificationsPage() {
 
       const response = await notificationService.broadcast(payload);
       const result = response.data?.data;
+      const successCount = result?.successCount ?? 0;
+      const failureCount = result?.failureCount ?? 0;
+
       setLastResult(
         result
           ? {
@@ -569,6 +608,14 @@ export default function NotificationsPage() {
             }
           : null,
       );
+
+      setSendProgress({
+        total: Math.max(estimated, successCount + failureCount),
+        sent: successCount,
+        failed: failureCount,
+        pending: 0,
+        done: true,
+      });
 
       const targetLabel =
         form.audience === "all"
@@ -583,20 +630,19 @@ export default function NotificationsPage() {
         toast.error(result.hint || `Send failed for ${targetLabel}.`);
       } else if (result?.failureCount) {
         toast.warning(
-          `Sent to ${targetLabel} · ${result.successCount ?? 0} delivered, ${result.failureCount} failed. See details below.`,
+          `Sent to ${targetLabel} · ${successCount} delivered, ${failureCount} failed.`,
         );
       } else {
-        toast.success(
-          `Sent to ${targetLabel} · ${result?.successCount ?? 0} delivered.`,
-        );
+        toast.success(`Sent to ${targetLabel} · ${successCount} delivered.`);
       }
 
-      setForm((prev) => ({ ...emptyForm, audience: prev.audience }));
-      if (form.audience === "all" || form.audience === "status") {
-        setSelectedUsers([]);
-      }
       loadAnalytics();
     } catch (err) {
+      setSendProgress((prev) => ({
+        ...prev,
+        pending: 0,
+        done: true,
+      }));
       toast.error(
         err.response?.data?.message || "Unable to send push notification.",
       );
@@ -614,12 +660,24 @@ export default function NotificationsPage() {
           ? "Send to selected user"
           : `Send to ${selectedUsers.length || 0} users`;
 
+  const showComposeForm = !busy && !sendProgress.done;
+
   return (
     <div className="space-y-6">
       <PageHeader
         eyebrow="Engagement"
         title="Push notifications"
-        description="Compose pushes and track manual plus automatic delivery: signed-in users, guests, iOS, and Android."
+        description="Track delivery across signed-in users, guests, iOS, and Android. Compose a push when you are ready to send."
+        actions={
+          <button
+            type="button"
+            onClick={() => setComposeOpen(true)}
+            className="inline-flex items-center gap-2 rounded-2xl bg-[var(--color-accent)] px-5 py-2.5 text-sm font-semibold text-white shadow-[0_12px_30px_rgba(196,122,74,0.25)]"
+          >
+            <Send size={16} />
+            Send notification
+          </button>
+        }
       />
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -690,26 +748,223 @@ export default function NotificationsPage() {
         />
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[1.35fr_0.95fr]">
-        <form
-          onSubmit={handleSubmit}
-          className="rounded-[28px] border border-white/70 bg-white/80 p-6 shadow-[0_24px_60px_rgba(74,44,31,0.08)]"
+      <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
+        <ChartCard
+          title="Manual vs automatic"
+          subtitle="Send source mix (7 days)"
         >
-          <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--color-accent)]/10 text-[var(--color-accent)]">
-              <BellRing size={20} />
-            </div>
-            <div>
-              <h2 className="text-lg font-semibold text-[var(--color-brown)]">
-                Compose notification
-              </h2>
-              <p className="text-sm text-slate-500">
-                Keep titles short. Messages appear on both Android and iOS.
-              </p>
+          <SharePieChart data={analytics?.sourceBreakdown || []} />
+        </ChartCard>
+        <ChartCard title="Audience mix" subtitle="Who each send targeted (7 days)">
+          <BreakdownBarChart data={analytics?.audienceBreakdown || []} />
+        </ChartCard>
+        <ChartCard
+          title="Accepted by platform"
+          subtitle="Token sends accepted by Firebase"
+        >
+          <SharePieChart data={analytics?.acceptedByPlatform || []} />
+        </ChartCard>
+        <ChartCard title="Registered devices" subtitle="FCM tokens by platform">
+          <BreakdownBarChart data={analytics?.deviceBreakdown || []} />
+        </ChartCard>
+        <ChartCard title="Push type mix" subtitle="Notification types (7 days)">
+          <BreakdownBarChart data={analytics?.typeBreakdown || []} />
+        </ChartCard>
+        <ChartCard title="Recent send activity" subtitle="Logged sends by day">
+          <TrendAreaChart data={sendTrend} />
+        </ChartCard>
+      </div>
+
+      <div className="rounded-[28px] border border-white/70 bg-white/80 p-6 shadow-[0_24px_60px_rgba(74,44,31,0.08)]">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h3 className="text-base font-semibold text-[var(--color-brown)]">
+              Recent sends
+            </h3>
+            <p className="mt-1 text-sm text-slate-500">
+              Manual and automatic pushes. Click a row for audience and platform
+              delivery details.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={loadAnalytics}
+            className="rounded-2xl border border-slate-200 px-3 py-2 text-xs font-medium text-slate-600"
+          >
+            Refresh
+          </button>
+        </div>
+
+        <div className="mt-4 space-y-3">
+          {loadingAnalytics ? (
+            <p className="text-sm text-slate-500">Loading analytics...</p>
+          ) : analytics?.recent?.length ? (
+            analytics.recent.map((entry) => {
+              const status =
+                entry.metadata?.status ||
+                (entry.metadata?.skipped ||
+                !(entry.metadata?.recipientTokenCount || 0)
+                  ? "no_tokens"
+                  : entry.metadata?.failureCount && !entry.metadata?.successCount
+                    ? "failed"
+                    : entry.metadata?.failureCount
+                      ? "partial"
+                      : "success");
+              const statusMeta = sendStatusMeta(status);
+
+              return (
+                <button
+                  type="button"
+                  key={entry.id}
+                  onClick={() => openSendDetail(entry.id)}
+                  className="w-full rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3 text-left transition hover:border-[var(--color-accent)]/40 hover:bg-white"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="truncate text-sm font-medium text-slate-800">
+                          {entry.metadata?.title || entry.description}
+                        </p>
+                        <span
+                          className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-semibold ${statusMeta.className}`}
+                        >
+                          {statusMeta.label}
+                        </span>
+                        <span
+                          className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-semibold ${
+                            entry.metadata?.source === "automatic"
+                              ? "border-amber-100 bg-amber-50 text-amber-800"
+                              : "border-sky-100 bg-sky-50 text-sky-800"
+                          }`}
+                        >
+                          {sourceLabel(entry.metadata?.source)}
+                        </span>
+                        {entry.metadata?.type ? (
+                          <span className="inline-flex rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-semibold capitalize text-slate-600">
+                            {entry.metadata.type}
+                          </span>
+                        ) : null}
+                      </div>
+                      <p className="mt-1 text-xs text-slate-500">
+                        {actionLabel(entry.action)} · {entry.actorName || "System"} ·{" "}
+                        {entry.metadata?.deliveryMode === "topic"
+                          ? "topic · guests+users"
+                          : "tokens · signed-in"}{" "}
+                        · {formatDateTime(entry.createdAt)}
+                      </p>
+                      {entry.metadata?.platformCounts ? (
+                        <p className="mt-1 text-xs text-slate-500">
+                          iOS {entry.metadata.platformCounts.accepted?.ios || 0}/
+                          {entry.metadata.platformCounts.failed?.ios || 0} · Android{" "}
+                          {entry.metadata.platformCounts.accepted?.android || 0}/
+                          {entry.metadata.platformCounts.failed?.android || 0}
+                        </p>
+                      ) : null}
+                      {entry.metadata?.hint ? (
+                        <p className="mt-2 line-clamp-2 text-xs leading-5 text-slate-600">
+                          {entry.metadata.hint}
+                        </p>
+                      ) : null}
+                    </div>
+                    <div className="shrink-0 text-right text-xs">
+                      <p className="inline-flex items-center gap-1 font-medium text-emerald-700">
+                        <CheckCircle2 size={12} />
+                        {entry.metadata?.successCount ?? 0}
+                      </p>
+                      <p className="mt-1 inline-flex items-center gap-1 font-medium text-rose-600">
+                        <XCircle size={12} />
+                        {entry.metadata?.failureCount ?? 0}
+                      </p>
+                      <p className="mt-2 text-[10px] font-medium uppercase tracking-[0.14em] text-slate-400">
+                        View
+                      </p>
+                    </div>
+                  </div>
+                </button>
+              );
+            })
+          ) : (
+            <p className="text-sm text-slate-500">No notification sends logged yet.</p>
+          )}
+        </div>
+      </div>
+
+      <ModalFrame
+        open={composeOpen}
+        wide
+        title="Send push notification"
+        subtitle="Keep titles short. Messages appear on both Android and iOS."
+        onClose={closeComposeModal}
+      >
+        {(busy || sendProgress.done) && (
+          <div className="mb-5">
+            <SendProgressPanel
+              total={sendProgress.total}
+              sent={sendProgress.sent}
+              failed={sendProgress.failed}
+              pending={sendProgress.pending}
+              done={sendProgress.done}
+            />
+          </div>
+        )}
+
+        {sendProgress.done && lastResult ? (
+          <div className="space-y-5">
+            <SendDebugDetails
+              title="Last send summary"
+              status={lastResult.status}
+              summary={{
+                title: lastResult.title || null,
+                body: lastResult.body || null,
+                type: lastResult.type || "custom",
+                audience: lastResult.audience,
+                source: lastResult.source || "manual",
+                deliveryMode: lastResult.deliveryMode || "tokens",
+                includesGuests: Boolean(lastResult.includesGuests),
+                guestCountKnown: false,
+                signedInAudience: lastResult.signedInAudience || null,
+                platformCounts: lastResult.platformCounts || null,
+                successCount: lastResult.successCount,
+                failureCount: lastResult.failureCount,
+                recipientTokenCount: lastResult.recipientTokenCount,
+                recipientUserCount: lastResult.recipientUserCount,
+                invalidTokensRemoved: lastResult.invalidTokensRemoved,
+                skipped: lastResult.skipped,
+                hint: lastResult.hint || lastResult.message,
+              }}
+              failureSummary={lastResult.failureSummary || []}
+              usersWithoutTokens={lastResult.usersWithoutTokens || []}
+              tokenResults={lastResult.tokenResults || []}
+              tokenResultTruncated={Boolean(lastResult.tokenResultTruncated)}
+            />
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={closeComposeModal}
+                className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700"
+              >
+                Close
+              </button>
             </div>
           </div>
+        ) : null}
 
-          <div className="mt-6 space-y-5">
+        {showComposeForm ? (
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div className="flex items-center gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--color-accent)]/10 text-[var(--color-accent)]">
+                <BellRing size={20} />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-[var(--color-brown)]">
+                  Compose notification
+                </h3>
+                <p className="text-sm text-slate-500">
+                  Choose an audience, then add title and message.
+                </p>
+              </div>
+            </div>
+
             <div>
               <span className="mb-2 block text-sm font-medium text-slate-700">
                 Audience
@@ -737,8 +992,8 @@ export default function NotificationsPage() {
               </div>
               {form.audience === "all" ? (
                 <p className="mt-2 text-xs text-slate-500">
-                  Uses an FCM topic so signed-in users and guests who opened the
-                  app and allowed notifications both receive it.
+                  Uses an FCM topic so signed-in users and guests who opened the app
+                  and allowed notifications both receive it.
                 </p>
               ) : null}
             </div>
@@ -835,9 +1090,7 @@ export default function NotificationsPage() {
 
                 <div className="max-h-56 overflow-y-auto rounded-2xl border border-slate-200 bg-white">
                   {loadingRecipients ? (
-                    <p className="px-4 py-3 text-sm text-slate-500">
-                      Loading users...
-                    </p>
+                    <p className="px-4 py-3 text-sm text-slate-500">Loading users...</p>
                   ) : recipients.length === 0 ? (
                     <p className="px-4 py-3 text-sm text-slate-500">
                       No users found
@@ -867,8 +1120,12 @@ export default function NotificationsPage() {
                             </span>
                             <span className="block truncate text-xs text-slate-500">
                               {user.email} · {statusLabel(user.status)}
-                              {user.tokenCount ? ` · ${user.tokenCount} token${user.tokenCount === 1 ? "" : "s"}` : ""}
-                              {user.deviceType ? ` · last device ${user.deviceType}` : ""}
+                              {user.tokenCount
+                                ? ` · ${user.tokenCount} token${user.tokenCount === 1 ? "" : "s"}`
+                                : ""}
+                              {user.deviceType
+                                ? ` · last device ${user.deviceType}`
+                                : ""}
                             </span>
                           </span>
                           <span
@@ -948,187 +1205,13 @@ export default function NotificationsPage() {
                 {busy ? "Sending..." : submitLabel}
               </button>
             </div>
-          </div>
-        </form>
+          </form>
+        ) : null}
 
-        <div className="space-y-4">
-          <div className="rounded-[28px] border border-white/70 bg-white/80 p-6 shadow-[0_24px_60px_rgba(74,44,31,0.08)]">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <h3 className="text-base font-semibold text-[var(--color-brown)]">
-                  Recent sends
-                </h3>
-                <p className="mt-1 text-sm text-slate-500">
-                  Manual and automatic pushes. Click a row for audience and
-                  platform delivery details.
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={loadAnalytics}
-                className="rounded-2xl border border-slate-200 px-3 py-2 text-xs font-medium text-slate-600"
-              >
-                Refresh
-              </button>
-            </div>
-
-            <div className="mt-4 space-y-3">
-              {loadingAnalytics ? (
-                <p className="text-sm text-slate-500">Loading analytics...</p>
-              ) : analytics?.recent?.length ? (
-                analytics.recent.map((entry) => {
-                  const status =
-                    entry.metadata?.status ||
-                    (entry.metadata?.skipped ||
-                    !(entry.metadata?.recipientTokenCount || 0)
-                      ? "no_tokens"
-                      : entry.metadata?.failureCount &&
-                          !entry.metadata?.successCount
-                        ? "failed"
-                        : entry.metadata?.failureCount
-                          ? "partial"
-                          : "success");
-                  const statusMeta = sendStatusMeta(status);
-
-                  return (
-                    <button
-                      type="button"
-                      key={entry.id}
-                      onClick={() => openSendDetail(entry.id)}
-                      className="w-full rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3 text-left transition hover:border-[var(--color-accent)]/40 hover:bg-white"
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <p className="truncate text-sm font-medium text-slate-800">
-                              {entry.metadata?.title || entry.description}
-                            </p>
-                            <span
-                              className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-semibold ${statusMeta.className}`}
-                            >
-                              {statusMeta.label}
-                            </span>
-                            <span
-                              className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-semibold ${
-                                entry.metadata?.source === "automatic"
-                                  ? "border-violet-100 bg-violet-50 text-violet-800"
-                                  : "border-sky-100 bg-sky-50 text-sky-800"
-                              }`}
-                            >
-                              {sourceLabel(entry.metadata?.source)}
-                            </span>
-                            {entry.metadata?.type ? (
-                              <span className="inline-flex rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-semibold capitalize text-slate-600">
-                                {entry.metadata.type}
-                              </span>
-                            ) : null}
-                          </div>
-                          <p className="mt-1 text-xs text-slate-500">
-                            {actionLabel(entry.action)} ·{" "}
-                            {entry.actorName || "System"} ·{" "}
-                            {entry.metadata?.deliveryMode === "topic"
-                              ? "topic · guests+users"
-                              : "tokens · signed-in"}{" "}
-                            · {formatDateTime(entry.createdAt)}
-                          </p>
-                          {entry.metadata?.platformCounts ? (
-                            <p className="mt-1 text-xs text-slate-500">
-                              iOS {entry.metadata.platformCounts.accepted?.ios || 0}/
-                              {entry.metadata.platformCounts.failed?.ios || 0} · Android{" "}
-                              {entry.metadata.platformCounts.accepted?.android || 0}/
-                              {entry.metadata.platformCounts.failed?.android || 0}
-                            </p>
-                          ) : null}
-                          {entry.metadata?.hint ? (
-                            <p className="mt-2 line-clamp-2 text-xs leading-5 text-slate-600">
-                              {entry.metadata.hint}
-                            </p>
-                          ) : null}
-                        </div>
-                        <div className="shrink-0 text-right text-xs">
-                          <p className="inline-flex items-center gap-1 font-medium text-emerald-700">
-                            <CheckCircle2 size={12} />
-                            {entry.metadata?.successCount ?? 0}
-                          </p>
-                          <p className="mt-1 inline-flex items-center gap-1 font-medium text-rose-600">
-                            <XCircle size={12} />
-                            {entry.metadata?.failureCount ?? 0}
-                          </p>
-                          <p className="mt-2 text-[10px] font-medium uppercase tracking-[0.14em] text-slate-400">
-                            View
-                          </p>
-                        </div>
-                      </div>
-                    </button>
-                  );
-                })
-              ) : (
-                <p className="text-sm text-slate-500">
-                  No notification sends logged yet.
-                </p>
-              )}
-            </div>
-          </div>
-
-          <BreakdownList
-            title="Manual vs automatic (7 days)"
-            items={analytics?.sourceBreakdown || []}
-            empty="No send source data yet."
-          />
-          <BreakdownList
-            title="Audience mix (7 days)"
-            items={analytics?.audienceBreakdown || []}
-            empty="No audience data yet."
-          />
-          <BreakdownList
-            title="Registered devices by platform"
-            items={analytics?.deviceBreakdown || []}
-            empty="No registered device data yet."
-          />
-          <BreakdownList
-            title="Accepted by platform (token sends)"
-            items={analytics?.acceptedByPlatform || []}
-            empty="No accepted device data yet."
-          />
-          <BreakdownList
-            title="Push type mix (7 days)"
-            items={analytics?.typeBreakdown || []}
-            empty="No type data yet."
-          />
-
-          {lastResult ? (
-            <div className="rounded-[28px] border border-white/70 bg-white/80 p-6 shadow-[0_24px_60px_rgba(74,44,31,0.08)]">
-              <SendDebugDetails
-                title="Last send debug"
-                status={lastResult.status}
-                summary={{
-                  title: lastResult.title || null,
-                  body: lastResult.body || null,
-                  type: lastResult.type || "custom",
-                  audience: lastResult.audience,
-                  source: lastResult.source || "manual",
-                  deliveryMode: lastResult.deliveryMode || "tokens",
-                  includesGuests: Boolean(lastResult.includesGuests),
-                  guestCountKnown: false,
-                  signedInAudience: lastResult.signedInAudience || null,
-                  platformCounts: lastResult.platformCounts || null,
-                  successCount: lastResult.successCount,
-                  failureCount: lastResult.failureCount,
-                  recipientTokenCount: lastResult.recipientTokenCount,
-                  recipientUserCount: lastResult.recipientUserCount,
-                  invalidTokensRemoved: lastResult.invalidTokensRemoved,
-                  skipped: lastResult.skipped,
-                  hint: lastResult.hint || lastResult.message,
-                }}
-                failureSummary={lastResult.failureSummary || []}
-                usersWithoutTokens={lastResult.usersWithoutTokens || []}
-                tokenResults={lastResult.tokenResults || []}
-                tokenResultTruncated={Boolean(lastResult.tokenResultTruncated)}
-              />
-            </div>
-          ) : null}
-        </div>
-      </div>
+        {busy && !sendProgress.done ? (
+          <p className="text-sm text-slate-500">Delivering your push notification…</p>
+        ) : null}
+      </ModalFrame>
 
       {loadingSendDetail || sendDetail ? (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/40 p-4 sm:items-center">

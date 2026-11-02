@@ -24,6 +24,7 @@
     "react-konva": "^19.2.1",
     "react-qr-code": "^2.0.18",
     "react-router-dom": "^7.6.0",
+    "recharts": "^2.15.4",
     "tailwindcss": "^4.1.6",
     "use-image": "^1.1.4"
   },
